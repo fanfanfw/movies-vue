@@ -6,17 +6,13 @@
   "Popular TV Shows": "Programas de televisión populares",
   "Top Rated TV Shows": "Programas de televisión mejor valorados",
   "TV Shows Airing Today": "Programas de televisión que se emiten hoy",
-
   "Watch Trailer": "Ver tráiler",
   "Explore more": "Explorar más",
-
   "Overview": "Visión general",
   "Videos": "Videos",
   "Media Photos": "Fotos",
-
   "Cast": "Reparto",
   "More like this": "Más como esto",
-
   "Storyline": "Trama",
   "Release Date": "Fecha de estreno",
   "Runtime": "Duración",
@@ -27,10 +23,8 @@
   "Status": "Estado",
   "Language": "Idioma",
   "Production": "Producción",
-
   "Backdrops": "Fondos",
   "Posters": "Pósters",
-
   "Known For": "Conocido por",
   "Credits": "Créditos",
   "Person Photos": "Fotos",
@@ -38,28 +32,60 @@
   "Known for": "Conocido por",
   "Place of birth": "Lugar de nacimiento",
   "Birthday": "Cumpleaños",
-
   "Acting Credits": "Actuación",
   "Production Credits": "Producción",
-
   "Type to search...": "Escribe para buscar...",
   "Type something to search...": "Escribe algo para buscar...",
-
   "{numberOfReviews} Reviews": "{numberOfReviews} Reseñas",
-
   "{numberOfImages} Images": "{numberOfImages} Imágenes",
   "{numberOfVideos} Videos": "{numberOfVideos} Videos",
-
   "as {character}": "como {character}",
-
   "{count} items": "{count} artículos",
   "Search result for: {currentSearch}": "Resultado de búsqueda para: {currentSearch}",
-
   "Error occurred on fetching": "Error al obtener datos",
   "Retry": "Reintentar",
-
   "Home": "Inicio",
   "Movies": "Películas",
   "TV Shows": "Series de TV",
-  "Search": "Buscar"
+  "Search": "Buscar",
+  "Admin": "Admin",
+  "Admin dashboard": "Admin dashboard",
+  "Login": "Login",
+  "Logout": "Logout",
+  "Register": "Register",
+  "Profile": "Profile",
+  "Username": "Username",
+  "Email": "Email",
+  "Password": "Password",
+  "Confirm password": "Confirm password",
+  "Username or email": "Username or email",
+  "Signing in...": "Signing in...",
+  "Creating account...": "Creating account...",
+  "Sign in to write and manage your reviews.": "Sign in to write and manage your reviews.",
+  "Create an account. An admin must approve it before review access is enabled.": "Create an account. An admin must approve it before review access is enabled.",
+  "No account yet?": "No account yet?",
+  "Already have an account?": "Already have an account?",
+  "Passwords do not match.": "Passwords do not match.",
+  "Login failed. Please try again.": "Login failed. Please try again.",
+  "Registration failed. Please check your details.": "Registration failed. Please check your details.",
+  "Registration received. Your account is waiting for admin approval before you can write reviews.": "Registration received. Your account is waiting for admin approval before you can write reviews.",
+  "Your account is waiting for admin approval.": "Your account is waiting for admin approval.",
+  "Your account was rejected by an administrator.": "Your account was rejected by an administrator.",
+  "Account and review activity.": "Account and review activity.",
+  "Role": "Role",
+  "Approval status": "Approval status",
+  "Joined": "Joined",
+  "Your reviews": "Your reviews",
+  "Your review history will appear here after review storage is enabled.": "Your review history will appear here after review storage is enabled.",
+  "Manage account approvals and moderation tools.": "Manage account approvals and moderation tools.",
+  "Approval queue": "Approval queue",
+  "Approve or reject newly registered users.": "Approve or reject newly registered users.",
+  "Loading...": "Loading...",
+  "No pending users.": "No pending users.",
+  "Registered": "Registered",
+  "Actions": "Actions",
+  "Approve": "Approve",
+  "Reject": "Reject",
+  "Working...": "Working...",
+  "Action failed. Please try again.": "Action failed. Please try again."
 }
