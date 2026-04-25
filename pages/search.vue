@@ -71,7 +71,7 @@ watch(
         {{ $t('Error occurred on fetching') }}
       </h1>
       <pre py2>{{ error }}</pre>
-      <button n-link border px4 py1 rounded @click="error = undefined">
+      <button class="ui-button ui-button-compact" @click="error = undefined">
         {{ $t('Retry') }}
       </button>
     </div>

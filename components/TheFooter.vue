@@ -33,11 +33,7 @@
           twitter_id: 'nuxt_js',
           github_id: 'nuxt/movies',
         }"
-      >
-        <a href="https://vercel.com" rel="noopener" target="_blank" aria-label="go to vercel">
-          <IconVercel alt="Vercel" />
-        </a>
-      </ExternalLinks>
+      />
 
       <LanguageSwitcher />
     </div>

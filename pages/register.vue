@@ -4,6 +4,13 @@ import { useAuth } from '~/composables/auth'
 const { user, refreshUser, register } = useAuth()
 const { t } = useI18n()
 
+definePageMeta({
+  pageTransition: {
+    name: 'auth-route',
+    mode: 'out-in',
+  },
+})
+
 await refreshUser()
 
 if (user.value)
@@ -15,6 +22,11 @@ const password = ref('')
 const confirmPassword = ref('')
 const loading = ref(false)
 const error = ref('')
+const toastMessage = computed(() => error.value)
+
+function getApiErrorMessage(e: any) {
+  return e?.data?.statusMessage || e?.statusMessage || e?.data?.message || t('Registration failed. Please check your details.')
+}
 
 async function submit() {
   error.value = ''
@@ -36,7 +48,7 @@ async function submit() {
     await navigateTo('/login?status=pending&registered=1')
   }
   catch (e: any) {
-    error.value = e?.statusMessage || e?.data?.message || t('Registration failed. Please check your details.')
+    error.value = getApiErrorMessage(e)
   }
   finally {
     loading.value = false
@@ -52,6 +64,11 @@ useHead({
   <main class="auth-page auth-page-register">
     <div class="auth-stage" aria-hidden="true">
       <div class="spotlight" />
+    </div>
+
+    <div v-if="toastMessage" class="auth-toast auth-toast-error" role="alert" aria-live="polite">
+      <div i-ph-warning-circle class="notice-icon" aria-hidden="true" />
+      <p>{{ toastMessage }}</p>
     </div>
 
     <section class="auth-card" aria-labelledby="register-title">
@@ -71,8 +88,11 @@ useHead({
       </div>
 
       <form class="auth-form" :aria-busy="loading" @submit.prevent="submit">
-        <div v-if="error" class="notice notice-error" role="alert">
-          {{ error }}
+        <div class="notice-stack" aria-live="polite">
+          <div v-if="error" class="notice notice-error" role="alert">
+            <div i-ph-warning-circle class="notice-icon" aria-hidden="true" />
+            <p>{{ error }}</p>
+          </div>
         </div>
 
         <label class="field">
@@ -175,6 +195,36 @@ useHead({
   animation: auth-enter 520ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+.auth-toast {
+  position: fixed;
+  z-index: 20;
+  top: 20px;
+  right: 20px;
+  width: min(calc(100vw - 32px), 420px);
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+  border: 1px solid rgb(255 255 255 / 14%);
+  padding: 14px 16px;
+  background: rgb(10 13 14 / 94%);
+  color: rgb(245 248 247);
+  box-shadow: 0 22px 70px rgb(0 0 0 / 45%);
+  backdrop-filter: blur(18px);
+  animation: toast-enter 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.auth-toast p {
+  margin: 0;
+  line-height: 1.5;
+  font-size: 14px;
+}
+
+.auth-toast-error {
+  border-color: rgb(248 113 113 / 46%);
+  background: linear-gradient(135deg, rgb(54 19 22 / 95%), rgb(12 12 13 / 94%));
+}
+
 .brand-mark {
   width: 44px;
   height: 44px;
@@ -218,6 +268,11 @@ useHead({
 .auth-form {
   display: grid;
   gap: 14px;
+}
+
+.notice-stack {
+  display: grid;
+  gap: 10px;
 }
 
 .field {
@@ -274,9 +329,24 @@ useHead({
 
 .notice {
   border: 1px solid rgb(255 255 255 / 12%);
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
   padding: 12px 14px;
   font-size: 14px;
   line-height: 1.5;
+  box-shadow: 0 14px 42px rgb(0 0 0 / 22%);
+  animation: notice-enter 240ms ease-out;
+}
+
+.notice p {
+  margin: 0;
+}
+
+.notice-icon {
+  margin-top: 2px;
+  font-size: 18px;
 }
 
 .notice-error {
@@ -312,6 +382,28 @@ useHead({
   to { opacity: 1; transform: rotate(-10deg) translate3d(-24px, 18px, 0); }
 }
 
+@keyframes notice-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes toast-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 @media (max-width: 560px) {
   .auth-page {
     padding: 16px;
@@ -325,11 +417,20 @@ useHead({
     font-size: 34px;
   }
 
+  .auth-toast {
+    top: 14px;
+    right: 16px;
+    left: 16px;
+    width: auto;
+  }
+
 }
 
 @media (prefers-reduced-motion: reduce) {
   .auth-card,
-  .spotlight {
+  .spotlight,
+  .notice,
+  .auth-toast {
     animation: none;
   }
 

@@ -13,19 +13,40 @@ const queries = computed(() => [
 const AsyncWrapper = defineComponent({
   name: 'AsyncWrapper',
   async setup(_, ctx) {
-    const list = await listMedia(type.value, queries.value[0].query, 1)
-    const item = await getMedia(type.value, list.results[0].id)
-    return () => ctx.slots?.default?.({ item })
+    let item = null
+    let error = ''
+    try {
+      const list = await listMedia(type.value, queries.value[0].query, 1)
+      if (!list.results[0])
+        throw new Error('No media is available right now.')
+      item = await getMedia(type.value, list.results[0].id)
+    }
+    catch (e: any) {
+      error = e?.statusMessage || e?.data?.message || e?.message || 'Media could not be loaded right now.'
+    }
+    return () => item
+      ? ctx.slots?.default?.({ item })
+      : ctx.slots?.fallback?.({ error })
   },
 })
 </script>
 
 <template>
   <div>
-    <AsyncWrapper v-slot="{ item }">
-      <NuxtLink :to="`/${type}/${item.id}`">
-        <MediaHero :item="item" />
-      </NuxtLink>
+    <AsyncWrapper>
+      <template #default="{ item }">
+        <NuxtLink :to="`/${type}/${item.id}`">
+          <MediaHero :item="item" />
+        </NuxtLink>
+      </template>
+      <template #fallback="{ error }">
+        <div min-h-80 flex="~ col gap3" items-center justify-center p6 text-center>
+          <div i-ph-warning-circle text-3xl text-primary />
+          <p max-w-xl op70>
+            {{ error || $t('Error occurred on fetching') }}
+          </p>
+        </div>
+      </template>
     </AsyncWrapper>
     <CarouselAutoQuery
       v-for="query of queries"

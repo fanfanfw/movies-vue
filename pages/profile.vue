@@ -156,11 +156,9 @@ useHead({
             <button
               v-if="review.status === 'visible'"
               type="button"
-              border="~ red/50"
-              text-red:1
-              px3 py2 w-max
+              class="ui-button ui-button-danger ui-button-compact"
+              w-max
               :disabled="!!busyReviewId"
-              disabled:op40
               @click="deleteReview(review.id)"
             >
               {{ busyReviewId === review.id ? $t('Working...') : $t('Delete') }}

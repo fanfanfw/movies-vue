@@ -18,16 +18,47 @@ export function getClientIp(event: H3Event) {
   return getRequestIP(event, { xForwardedFor: true }) || 'unknown'
 }
 
+function normalizeOrigin(origin: string) {
+  try {
+    const url = new URL(origin)
+    return `${url.protocol}//${url.host}`
+  }
+  catch {
+    return origin.replace(/\/$/, '')
+  }
+}
+
+function getConfiguredOrigins(event: H3Event) {
+  const config = useRuntimeConfig(event)
+  return String(config.appOrigin || '')
+    .split(',')
+    .map(origin => origin.trim())
+    .filter(Boolean)
+    .map(normalizeOrigin)
+}
+
+function getRequestOrigin(event: H3Event) {
+  const host = getHeader(event, 'host')
+  if (!host)
+    return null
+
+  const forwardedProto = getHeader(event, 'x-forwarded-proto')?.split(',')[0]?.trim()
+  const proto = forwardedProto || ((event.node.req.socket as { encrypted?: boolean }).encrypted ? 'https' : 'http')
+  return `${proto}://${host}`
+}
+
 export function assertValidOrigin(event: H3Event) {
   const method = event.method.toUpperCase()
   if (method === 'GET' || method === 'HEAD' || method === 'OPTIONS')
     return
 
-  const config = useRuntimeConfig(event)
-  const expectedOrigin = config.appOrigin
   const origin = getHeader(event, 'origin')
+  const allowedOrigins = new Set([
+    ...getConfiguredOrigins(event),
+    getRequestOrigin(event),
+  ].filter(Boolean).map(origin => normalizeOrigin(origin!)))
 
-  if (!origin || origin !== expectedOrigin) {
+  if (!origin || !allowedOrigins.has(normalizeOrigin(origin))) {
     throw createError({
       statusCode: 403,
       statusMessage: 'Invalid request origin.',

@@ -116,11 +116,11 @@ useHead({
     <form flex="~ col lg:row gap3" lg:items-end :aria-busy="pending" @submit.prevent="() => refresh()">
       <label flex="~ col gap2" flex-1>
         <span text-sm op70>{{ $t('Search') }}</span>
-        <input v-model="filters.q" type="search" border="~ base" bg-black p3 min-h-11 outline-none focus:border-primary :placeholder="$t('Title, username, or email')">
+        <input v-model="filters.q" type="search" class="ui-control" :placeholder="$t('Title, username, or email')">
       </label>
       <label flex="~ col gap2">
         <span text-sm op70>{{ $t('Status') }}</span>
-        <select v-model="filters.status" border="~ base" bg-black p3 min-h-11 outline-none focus:border-primary>
+        <select v-model="filters.status" class="ui-control">
           <option value="all">
             {{ $t('All statuses') }}
           </option>
@@ -140,7 +140,7 @@ useHead({
       </label>
       <label flex="~ col gap2">
         <span text-sm op70>{{ $t('Sentiment') }}</span>
-        <select v-model="filters.sentiment" border="~ base" bg-black p3 min-h-11 outline-none focus:border-primary>
+        <select v-model="filters.sentiment" class="ui-control">
           <option value="all">
             {{ $t('All sentiment') }}
           </option>
@@ -152,7 +152,7 @@ useHead({
           </option>
         </select>
       </label>
-      <button type="submit" border="~ primary/50" px4 py3 min-h-11 h-max focus:outline-primary>
+      <button type="submit" class="ui-button ui-button-primary" h-max focus:outline-primary>
         {{ $t('Apply filters') }}
       </button>
     </form>
@@ -241,10 +241,8 @@ useHead({
               <div flex justify-end gap2>
                 <button
                   type="button"
-                  border="~ primary/50"
-                  px3 py2 min-h-11
+                  class="ui-button ui-button-primary ui-button-compact"
                   :disabled="!!busyReviewId || review.status === 'hidden_by_admin'"
-                  disabled:op40
                   focus:outline-primary
                   :aria-label="$t('Hide review')"
                   @click="updateReviewStatus(review.id, 'hidden_by_admin')"
@@ -253,11 +251,8 @@ useHead({
                 </button>
                 <button
                   type="button"
-                  border="~ red/50"
-                  text-red:1
-                  px3 py2 min-h-11
+                  class="ui-button ui-button-danger ui-button-compact"
                   :disabled="!!busyReviewId || review.status === 'deleted_by_admin'"
-                  disabled:op40
                   focus:outline-primary
                   :aria-label="$t('Remove review')"
                   @click="updateReviewStatus(review.id, 'deleted_by_admin')"

@@ -64,4 +64,119 @@ body,
   color: white;
   color-scheme: dark;
 }
+
+button,
+input,
+select,
+textarea {
+  color: inherit;
+  font: inherit;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: rgb(214 225 222 / 48%);
+  opacity: 1;
+}
+
+select option {
+  background: #0b0f10;
+  color: #f5f8f7;
+}
+
+.ui-control,
+.admin-control {
+  min-height: 44px;
+  border: 1px solid rgb(255 255 255 / 16%);
+  background: rgb(0 0 0 / 72%);
+  color: rgb(245 248 247);
+  padding: 10px 12px;
+  outline: none;
+}
+
+.ui-control:focus,
+.admin-control:focus {
+  border-color: rgb(42 198 178);
+  box-shadow: 0 0 0 3px rgb(42 198 178 / 16%);
+}
+
+.ui-button,
+.admin-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  border: 1px solid rgb(255 255 255 / 16%);
+  padding: 8px 14px;
+  background: rgb(255 255 255 / 8%);
+  color: rgb(245 248 247);
+  font-weight: 700;
+  line-height: 1.25;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 160ms ease, filter 160ms ease, opacity 160ms ease, background-color 160ms ease;
+}
+
+.ui-button:hover:not(:disabled),
+.ui-button:focus-visible,
+.admin-button:hover:not(:disabled),
+.admin-button:focus-visible {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+.ui-button:disabled,
+.admin-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.68;
+}
+
+.ui-button-primary,
+.admin-button-primary {
+  border-color: rgb(42 198 178 / 72%);
+  background: rgb(42 198 178);
+  color: rgb(2 8 8);
+}
+
+.ui-button-danger,
+.admin-button-danger {
+  border-color: rgb(248 113 113 / 72%);
+  background: rgb(185 28 28);
+  color: rgb(255 245 245);
+}
+
+.ui-button-compact {
+  min-height: 36px;
+  padding: 6px 10px;
+  font-size: 0.875rem;
+}
+
+.auth-route-enter-active,
+.auth-route-leave-active {
+  transition:
+    opacity 220ms ease,
+    transform 260ms cubic-bezier(0.22, 1, 0.36, 1),
+    filter 260ms ease;
+}
+
+.auth-route-enter-from {
+  opacity: 0;
+  filter: blur(8px);
+  transform: translateY(14px) scale(0.985);
+}
+
+.auth-route-leave-to {
+  opacity: 0;
+  filter: blur(4px);
+  transform: translateY(-10px) scale(0.99);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-route-enter-active,
+  .auth-route-leave-active {
+    transition: none;
+  }
+}
 </style>

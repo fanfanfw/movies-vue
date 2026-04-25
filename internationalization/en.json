@@ -125,6 +125,8 @@
   "Review moderation": "Review moderation",
   "Hide or remove reviews and inspect model confidence.": "Hide or remove reviews and inspect model confidence.",
   "User list": "User list",
+  "User management": "User management",
+  "Review management": "Review management",
   "Review user roles, approval status, and activity.": "Review user roles, approval status, and activity.",
   "Moderate review visibility and inspect model confidence without exposing raw scores to public users.": "Moderate review visibility and inspect model confidence without exposing raw scores to public users.",
   "Title, username, or email": "Title, username, or email",

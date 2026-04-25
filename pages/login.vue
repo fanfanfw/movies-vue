@@ -2,18 +2,33 @@
 import { useAuth } from '~/composables/auth'
 
 const route = useRoute()
-const { user, refreshUser, login } = useAuth()
+const { user, refreshUser, login, isAdmin } = useAuth()
 const { t } = useI18n()
+
+definePageMeta({
+  pageTransition: {
+    name: 'auth-route',
+    mode: 'out-in',
+  },
+})
 
 await refreshUser()
 
 if (user.value)
-  await navigateTo('/')
+  await navigateTo(isAdmin.value ? '/admin' : '/')
 
 const identifier = ref('')
 const password = ref('')
 const loading = ref(false)
 const error = ref('')
+
+function getApiErrorStatus(e: any) {
+  return e?.data?.data?.status || e?.data?.status
+}
+
+function getApiErrorMessage(e: any) {
+  return e?.data?.statusMessage || e?.statusMessage || e?.data?.message || t('Login failed. Please try again.')
+}
 
 const statusMessage = computed(() => {
   if (route.query.status === 'pending')
@@ -22,6 +37,8 @@ const statusMessage = computed(() => {
     return t('Your account was rejected by an administrator.')
   return ''
 })
+const toastMessage = computed(() => error.value || statusMessage.value)
+const toastKind = computed(() => error.value || route.query.status === 'rejected' ? 'error' : 'info')
 
 async function submit() {
   error.value = ''
@@ -34,16 +51,16 @@ async function submit() {
     })
 
     const redirect = Array.isArray(route.query.redirect) ? route.query.redirect[0] : route.query.redirect
-    await navigateTo(redirect || '/')
+    await navigateTo(redirect || (isAdmin.value ? '/admin' : '/'))
   }
   catch (e: any) {
-    const status = e?.data?.data?.status
+    const status = getApiErrorStatus(e)
     if (status === 'pending' || status === 'rejected') {
       await navigateTo(`/login?status=${status}`)
       return
     }
 
-    error.value = e?.statusMessage || e?.data?.message || t('Login failed. Please try again.')
+    error.value = getApiErrorMessage(e)
   }
   finally {
     loading.value = false
@@ -59,6 +76,18 @@ useHead({
   <main class="auth-page">
     <div class="auth-stage" aria-hidden="true">
       <div class="spotlight" />
+    </div>
+
+    <div
+      v-if="toastMessage"
+      class="auth-toast"
+      :class="toastKind === 'error' ? 'auth-toast-error' : 'auth-toast-info'"
+      :role="toastKind === 'error' ? 'alert' : 'status'"
+      aria-live="polite"
+    >
+      <div v-if="toastKind === 'error'" i-ph-warning-circle class="notice-icon" aria-hidden="true" />
+      <div v-else i-ph-clock-countdown class="notice-icon" aria-hidden="true" />
+      <p>{{ toastMessage }}</p>
     </div>
 
     <section class="auth-card" aria-labelledby="login-title">
@@ -78,11 +107,15 @@ useHead({
       </div>
 
       <form class="auth-form" :aria-busy="loading" @submit.prevent="submit">
-        <div v-if="statusMessage" class="notice notice-info" role="status">
-          {{ statusMessage }}
-        </div>
-        <div v-if="error" class="notice notice-error" role="alert">
-          {{ error }}
+        <div class="notice-stack" aria-live="polite">
+          <div v-if="statusMessage" class="notice notice-info" role="status">
+            <div i-ph-clock-countdown class="notice-icon" aria-hidden="true" />
+            <p>{{ statusMessage }}</p>
+          </div>
+          <div v-if="error" class="notice notice-error" role="alert">
+            <div i-ph-warning-circle class="notice-icon" aria-hidden="true" />
+            <p>{{ error }}</p>
+          </div>
         </div>
 
         <label class="field">
@@ -175,6 +208,41 @@ useHead({
   animation: auth-enter 520ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+.auth-toast {
+  position: fixed;
+  z-index: 20;
+  top: 20px;
+  right: 20px;
+  width: min(calc(100vw - 32px), 420px);
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+  border: 1px solid rgb(255 255 255 / 14%);
+  padding: 14px 16px;
+  background: rgb(10 13 14 / 94%);
+  color: rgb(245 248 247);
+  box-shadow: 0 22px 70px rgb(0 0 0 / 45%);
+  backdrop-filter: blur(18px);
+  animation: toast-enter 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.auth-toast p {
+  margin: 0;
+  line-height: 1.5;
+  font-size: 14px;
+}
+
+.auth-toast-info {
+  border-color: rgb(42 198 178 / 42%);
+  background: linear-gradient(135deg, rgb(17 35 32 / 95%), rgb(9 13 14 / 94%));
+}
+
+.auth-toast-error {
+  border-color: rgb(248 113 113 / 46%);
+  background: linear-gradient(135deg, rgb(54 19 22 / 95%), rgb(12 12 13 / 94%));
+}
+
 .brand-mark {
   width: 44px;
   height: 44px;
@@ -218,6 +286,11 @@ useHead({
 .auth-form {
   display: grid;
   gap: 16px;
+}
+
+.notice-stack {
+  display: grid;
+  gap: 10px;
 }
 
 .field {
@@ -274,9 +347,24 @@ useHead({
 
 .notice {
   border: 1px solid rgb(255 255 255 / 12%);
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
   padding: 12px 14px;
   font-size: 14px;
   line-height: 1.5;
+  box-shadow: 0 14px 42px rgb(0 0 0 / 22%);
+  animation: notice-enter 240ms ease-out;
+}
+
+.notice p {
+  margin: 0;
+}
+
+.notice-icon {
+  margin-top: 2px;
+  font-size: 18px;
 }
 
 .notice-info {
@@ -317,6 +405,28 @@ useHead({
   to { opacity: 1; transform: rotate(-10deg) translate3d(-24px, 18px, 0); }
 }
 
+@keyframes notice-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes toast-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 @media (max-width: 560px) {
   .auth-page {
     padding: 16px;
@@ -330,11 +440,20 @@ useHead({
     font-size: 34px;
   }
 
+  .auth-toast {
+    top: 14px;
+    right: 16px;
+    left: 16px;
+    width: auto;
+  }
+
 }
 
 @media (prefers-reduced-motion: reduce) {
   .auth-card,
-  .spotlight {
+  .spotlight,
+  .notice,
+  .auth-toast {
     animation: none;
   }
 

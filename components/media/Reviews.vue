@@ -205,7 +205,7 @@ onBeforeUnmount(() => {
           </p>
         </div>
 
-        <NuxtLink v-if="!user" to="/login" border="~ primary/50" px4 py2 min-h-11 h-max flex items-center focus:outline-primary>
+        <NuxtLink v-if="!user" to="/login" class="ui-button ui-button-primary" h-max flex items-center focus:outline-primary>
           {{ $t('Log in to write a review.') }}
         </NuxtLink>
       </div>
@@ -220,9 +220,7 @@ onBeforeUnmount(() => {
             required
             rows="6"
             :disabled="submitting || deleting"
-            bg-black
-            border="~ base"
-            p4
+            class="ui-control review-textarea"
             outline-none
             resize-y
             focus:border-primary
@@ -238,17 +236,14 @@ onBeforeUnmount(() => {
             <button
               v-if="isEditMode"
               type="button"
-              border="~ red/50"
-              text-red:1
-              px4 py2 min-h-11
+              class="ui-button ui-button-danger"
               :disabled="submitting || deleting"
-              disabled:op40
               focus:outline-primary
               @click="deleteReview"
             >
               {{ deleting ? $t('Deleting...') : $t('Delete') }}
             </button>
-            <button type="submit" bg-primary text-black font-bold px5 py2 min-h-11 :disabled="submitting || deleting" disabled:op50 focus:outline-primary>
+            <button type="submit" class="ui-button ui-button-primary" :disabled="submitting || deleting" focus:outline-primary>
               {{ submitting ? $t('Analyzing...') : isEditMode ? $t('Update review') : $t('Submit review') }}
             </button>
           </div>
@@ -273,7 +268,7 @@ onBeforeUnmount(() => {
         <h2 text-2xl font-serif>
           {{ $t('Reviews') }}
         </h2>
-        <button type="button" n-link text-sm min-h-11 focus:outline-primary @click="() => refresh()">
+        <button type="button" class="ui-button ui-button-compact" focus:outline-primary @click="() => refresh()">
           {{ $t('Refresh') }}
         </button>
       </div>
@@ -356,6 +351,12 @@ onBeforeUnmount(() => {
   background: linear-gradient(90deg, transparent, rgb(255 255 255 / 8%), transparent);
   animation: review-loading-scan 1100ms linear infinite;
   opacity: 1;
+}
+
+.review-textarea {
+  width: 100%;
+  min-height: 11rem;
+  resize: vertical;
 }
 
 @keyframes warm-review-glow {

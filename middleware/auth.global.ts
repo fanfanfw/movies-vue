@@ -1,7 +1,6 @@
-import process from 'node:process'
 import { useAuth } from '~/composables/auth'
 
-const isTest = process.env.NODE_ENV === 'test'
+const isTest = import.meta.env.MODE === 'test'
 
 const publicRoutes = new Set([
   '/login',

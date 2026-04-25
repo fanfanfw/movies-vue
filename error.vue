@@ -22,7 +22,7 @@ function handleError() {
         Looks like you've followed a broken link or entered a URL that doesn't exist on this site.
       </div>
       <pre v-if="isDev">{{ error }}</pre>
-      <button n-link border px4 py1 rounded @click="handleError">
+      <button class="ui-button ui-button-compact" @click="handleError">
         Go Back
       </button>
     </div>

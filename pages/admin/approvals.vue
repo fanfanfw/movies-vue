@@ -104,10 +104,10 @@ useHead({
             </td>
             <td p4>
               <div flex justify-end gap2>
-                <button type="button" border="~ primary/50" px3 py2 :disabled="!!busyUserId" disabled:op40 @click="moderate(pendingUser.id, 'approve')">
+                <button type="button" class="ui-button ui-button-primary ui-button-compact" :disabled="!!busyUserId" @click="moderate(pendingUser.id, 'approve')">
                   {{ busyUserId === pendingUser.id ? $t('Working...') : $t('Approve') }}
                 </button>
-                <button type="button" border="~ red/50" px3 py2 text-red:1 :disabled="!!busyUserId" disabled:op40 @click="moderate(pendingUser.id, 'reject')">
+                <button type="button" class="ui-button ui-button-danger ui-button-compact" :disabled="!!busyUserId" @click="moderate(pendingUser.id, 'reject')">
                   {{ $t('Reject') }}
                 </button>
               </div>
