@@ -969,13 +969,109 @@ To reduce implementation ambiguity, an AI agent should follow these defaults unl
 - Update `.env.example` with required variable names but no real secrets.
 - Do not edit the proxy app unless required for TMDB metadata fetch behavior.
 
-## 20. Technical Implementation Contract
+## 20. Critical Clarifications
+
+These clarifications are mandatory because they close common implementation gaps that can cause security bugs, stale authenticated UI, or moderation bypasses.
+
+### 20.1 Phase and Prisma Migration Rules
+
+- If implementing strictly phase-by-phase, Phase 1 must create only the Prisma setup plus `User`, `Session`, `UserRole`, and `ApprovalStatus`.
+- If implementing strictly phase-by-phase, do not add the `Review` model or `User.reviews` / `User.moderatedReviews` relations until Phase 3.
+- Phase 3 adds `Review`, `MediaType`, `SentimentLabel`, `ReviewStatus`, and the related `User` relations in a second migration.
+- If the project owner explicitly asks the agent to implement multiple phases in one pass, the agent may create the full final Prisma schema in one migration.
+- At every phase boundary, `pnpm prisma validate` must pass.
+
+### 20.2 Auth, Admin, and API Caching
+
+Authenticated, role-specific, and API responses must never be cached.
+
+Update Nuxt/Nitro route rules so these paths are not cached in production:
+
+```text
+/api/**
+/login
+/register
+/profile
+/admin/**
+```
+
+Recommended route-rule behavior:
+
+- Public browsing pages may keep the existing production cache behavior.
+- `/api/**` should use no-store/no-cache response headers.
+- `/login`, `/register`, `/profile`, and `/admin/**` should not use ISR/SWR/static caching.
+- `GET /api/auth/me` must always reflect the current cookie/session state.
+
+### 20.3 Review Moderation and Owner Actions
+
+- Users may edit or soft-delete only their own `visible` reviews.
+- Users may resubmit after their own review is `deleted_by_user`; the existing row must be reused, set back to `visible`, updated with new content, and reclassified.
+- Users may not edit, restore, replace, or soft-delete reviews with status `hidden_by_admin` or `deleted_by_admin`.
+- Admin-hidden and admin-deleted reviews remain auditable and visible publicly only through placeholder content.
+- V1 does not support restoring admin-hidden or admin-deleted reviews to `visible`.
+
+### 20.4 Admin Review Status Payload
+
+`PATCH /api/admin/reviews/:id/status` must accept only this request shape:
+
+```json
+{
+  "status": "hidden_by_admin",
+  "moderationMessage": "Optional internal or public-safe moderation note."
+}
+```
+
+Rules:
+
+- `status` may be only `hidden_by_admin` or `deleted_by_admin`.
+- Admin routes must not accept `visible` or `deleted_by_user` from this endpoint in V1.
+- `moderationMessage` is optional, must be trimmed, and should have a practical maximum length such as 500 characters.
+- The route must set `moderatedAt` and `moderatedById`.
+- The public review endpoint must never return original content for admin-hidden or admin-deleted reviews.
+
+### 20.5 Input Normalization
+
+Registration and login must normalize identity fields consistently:
+
+- `email`: trim and lowercase before validation, lookup, and storage.
+- `username`: trim before validation, lookup, and storage.
+- `username` length: 3-32 characters.
+- `username` allowed characters: letters, numbers, underscore, dot, and hyphen.
+- `password`: minimum 8 characters; do not silently trim passwords because spaces may be intentional.
+- Login identifier: trim; if it contains `@`, treat email lookup as lowercase.
+
+### 20.6 API Error Helper
+
+Expected API errors must use a shared helper, for example `server/utils/api-error.ts`, so endpoints consistently return the PRD error shape:
+
+```json
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Readable message for the UI."
+  }
+}
+```
+
+Do not expose raw Nuxt/Nitro error output, stack traces, Prisma errors, database details, TMDB proxy errors, or ML API internals to the browser for expected failures.
+
+### 20.7 Origin Configuration
+
+Local V1 may use:
+
+```text
+APP_ORIGIN=http://localhost:3000
+```
+
+For deployment behind Cloudflare Zero Trust or any public domain, configure the deployed app origin explicitly. A future-compatible implementation may support comma-separated origins through `APP_ORIGINS`, but V1 must at minimum validate against the configured local or production app origin and must not validate against the TMDB proxy or ML API origin.
+
+## 21. Technical Implementation Contract
 
 This section is the implementation contract for AI agents. If another section is less specific, follow this section. If this section conflicts with an explicit project-owner instruction, follow the project-owner instruction.
 
-### 20.1 Prisma Schema Contract
+### 21.1 Prisma Schema Contract
 
-Use Prisma with PostgreSQL. Create `prisma/schema.prisma` with this structure unless the project owner explicitly changes it.
+Use Prisma with PostgreSQL. The final schema must match this structure unless the project owner explicitly changes it. If implementing phase-by-phase, follow the migration rules in Section 20.1 and do not leave intermediate schemas invalid.
 
 ```prisma
 generator client {
@@ -1077,9 +1173,9 @@ model Review {
 }
 ```
 
-Phase 1 creates Prisma setup, `User`, and `Session`. Phase 3 adds `Review`, `MediaType`, `SentimentLabel`, and `ReviewStatus` if they were not already added. Do not leave the schema in a state where `pnpm prisma validate` fails.
+Phase 1 creates Prisma setup, `User`, `Session`, `UserRole`, and `ApprovalStatus`. Phase 3 adds `Review`, `MediaType`, `SentimentLabel`, `ReviewStatus`, and the `User` review/moderation relations if they were not already added. Do not leave the schema in a state where `pnpm prisma validate` fails.
 
-### 20.2 Auth and Session Contract
+### 21.2 Auth and Session Contract
 
 - Do not use JWT, Nuxt Auth, NextAuth, Lucia, Supabase Auth, Firebase Auth, or any full authentication framework in V1.
 - `SESSION_SECRET` is reserved for future use and must not change the opaque database-backed session design.
@@ -1089,8 +1185,9 @@ Phase 1 creates Prisma setup, `User`, and `Session`. Phase 3 adds `Review`, `Med
 - Pending and rejected users never receive an active session.
 - Mutating server routes must call a shared Origin validation helper before performing writes.
 - Shared auth helpers should live under `server/utils/auth.ts`, `server/utils/session.ts`, and `server/utils/password.ts`.
+- Auth and admin routes must follow the no-cache requirements in Section 20.2.
 
-### 20.3 API Response Contract
+### 21.3 API Response Contract
 
 All API errors should use this JSON shape:
 
@@ -1233,7 +1330,20 @@ For admin-hidden and admin-deleted reviews, the public endpoint must return plac
 
 Admin list endpoints may include `email`, `sentimentConfidence`, `sentimentScoresJson`, and `modelVersion`. Public/user endpoints must not include raw confidence or raw scores.
 
-### 20.4 Seed Script Contract
+`PATCH /api/admin/reviews/:id/status` must follow the request restrictions in Section 20.4 and returns:
+
+```json
+{
+  "review": {
+    "id": "review_id",
+    "status": "hidden_by_admin",
+    "moderatedAt": "2026-04-25T08:00:00.000Z",
+    "moderatedById": "admin_user_id"
+  }
+}
+```
+
+### 21.4 Seed Script Contract
 
 Add these package scripts if missing:
 
@@ -1258,7 +1368,7 @@ Seed behavior:
 - Hash the provided password with argon2id.
 - Never print the password or password hash.
 
-### 20.5 Frontend Integration Contract
+### 21.5 Frontend Integration Contract
 
 Use these exact frontend integration points unless the project owner changes them:
 
@@ -1272,6 +1382,7 @@ Use these exact frontend integration points unless the project owner changes the
 - Keep `NavBar` visually icon-first and compact. Preferred icons: login `i-ph-sign-in`, register `i-ph-user-plus`, profile `i-ph-user-circle`, admin `i-ph-shield`, logout `i-ph-sign-out`.
 - Add user-facing copy to `internationalization/en.json` and use `$t(...)` in Vue templates.
 - Do not translate every non-English locale in V1 unless explicitly requested.
+- Auth/admin pages must not depend on cached auth state; they should refresh or invalidate `GET /api/auth/me` after login, logout, approval-sensitive actions, and session errors.
 
 Required pages:
 
@@ -1285,7 +1396,7 @@ pages/admin/reviews.vue
 pages/admin/users.vue
 ```
 
-### 20.6 Server File Contract
+### 21.6 Server File Contract
 
 Use this server layout unless a simpler equivalent is clearly justified:
 
@@ -1315,6 +1426,7 @@ server/utils/session.ts
 server/utils/password.ts
 server/utils/rate-limit.ts
 server/utils/csrf.ts
+server/utils/api-error.ts
 server/utils/reviews.ts
 server/utils/model-api.ts
 server/utils/tmdb.ts
@@ -1322,7 +1434,7 @@ server/utils/tmdb.ts
 
 Do not edit the `proxy/` workspace unless review submission cannot fetch TMDB metadata through the existing TMDB proxy route.
 
-### 20.7 Per-Phase File Scope and Verification
+### 21.7 Per-Phase File Scope and Verification
 
 Phase 1 allowed scope:
 
@@ -1337,6 +1449,7 @@ Phase 1 allowed scope:
 - `server/utils/password.ts`
 - `server/utils/csrf.ts`
 - `server/utils/rate-limit.ts`
+- `server/utils/api-error.ts`
 - `server/api/auth/me.get.ts`
 - focused tests for auth/session utilities
 
