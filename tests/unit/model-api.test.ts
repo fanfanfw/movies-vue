@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { validatePrediction } from '~/server/utils/model-api'
+import { createRecoverableModelError, isModelValidationError, validatePrediction } from '~/server/utils/model-api'
 
 describe('model API client', () => {
   it('returns a validated sentiment classification', () => {
@@ -55,5 +55,22 @@ describe('model API client', () => {
       scores: null as any,
       is_positive: false,
     })).toThrow('Model returned invalid score details.')
+  })
+
+  it('distinguishes model validation errors from upstream failures', () => {
+    expect(isModelValidationError({
+      statusCode: 502,
+      statusMessage: 'Model returned an unsupported sentiment label.',
+    })).toBe(true)
+
+    expect(isModelValidationError({
+      statusCode: 401,
+      statusMessage: 'Invalid API key',
+    })).toBe(false)
+
+    expect(createRecoverableModelError()).toMatchObject({
+      statusCode: 502,
+      statusMessage: 'Review could not be analyzed right now. Please try again.',
+    })
   })
 })

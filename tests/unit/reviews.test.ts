@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { assertEditableReviewStatus, reviewSubmissionSchema, serializePublicReview } from '~/server/utils/reviews'
+import { assertEditableReviewStatus, reviewSubmissionSchema, serializeAdminReview, serializePublicReview } from '~/server/utils/reviews'
 
 describe('review utilities', () => {
   it('validates media type, TMDB id, and review length', () => {
@@ -79,5 +79,46 @@ describe('review utilities', () => {
     expect(() => assertEditableReviewStatus('deleted_by_user')).not.toThrow()
     expect(() => assertEditableReviewStatus('hidden_by_admin')).toThrow('This review has been moderated and cannot be edited.')
     expect(() => assertEditableReviewStatus('deleted_by_admin')).toThrow('This review has been moderated and cannot be edited.')
+  })
+
+  it('keeps model confidence visible only in admin serialization', () => {
+    const review = {
+      id: 'review_1',
+      user: {
+        id: 'user_1',
+        username: 'critic',
+        email: 'critic@example.com',
+      },
+      moderatedBy: null,
+      tmdbMediaType: 'movie',
+      tmdbMediaId: '83533',
+      tmdbTitleSnapshot: 'The Reviewable Movie',
+      tmdbPosterPathSnapshot: null,
+      content: 'A thoughtful public review.',
+      sentimentLabel: 'positive',
+      sentimentConfidence: 0.91,
+      sentimentScoresJson: {
+        positive: 0.91,
+        negative: 0.09,
+      },
+      modelVersion: 'v1',
+      status: 'visible',
+      moderationMessage: null,
+      moderatedAt: null,
+      moderatedById: null,
+      createdAt: new Date('2026-04-25T00:00:00.000Z'),
+      updatedAt: new Date('2026-04-25T00:00:00.000Z'),
+    } as any
+
+    expect(serializePublicReview(review)).not.toHaveProperty('sentimentConfidence')
+    expect(serializePublicReview(review)).not.toHaveProperty('sentimentScoresJson')
+    expect(serializeAdminReview(review)).toMatchObject({
+      sentimentConfidence: 0.91,
+      sentimentScoresJson: {
+        positive: 0.91,
+        negative: 0.09,
+      },
+      modelVersion: 'v1',
+    })
   })
 })

@@ -113,14 +113,14 @@ useHead({
       </p>
     </header>
 
-    <form flex="~ col lg:row gap3" lg:items-end @submit.prevent="() => refresh()">
+    <form flex="~ col lg:row gap3" lg:items-end :aria-busy="pending" @submit.prevent="() => refresh()">
       <label flex="~ col gap2" flex-1>
         <span text-sm op70>{{ $t('Search') }}</span>
-        <input v-model="filters.q" type="search" border="~ base" bg-black p3 outline-none focus:border-primary :placeholder="$t('Title, username, or email')">
+        <input v-model="filters.q" type="search" border="~ base" bg-black p3 min-h-11 outline-none focus:border-primary :placeholder="$t('Title, username, or email')">
       </label>
       <label flex="~ col gap2">
         <span text-sm op70>{{ $t('Status') }}</span>
-        <select v-model="filters.status" border="~ base" bg-black p3 outline-none focus:border-primary>
+        <select v-model="filters.status" border="~ base" bg-black p3 min-h-11 outline-none focus:border-primary>
           <option value="all">
             {{ $t('All statuses') }}
           </option>
@@ -140,7 +140,7 @@ useHead({
       </label>
       <label flex="~ col gap2">
         <span text-sm op70>{{ $t('Sentiment') }}</span>
-        <select v-model="filters.sentiment" border="~ base" bg-black p3 outline-none focus:border-primary>
+        <select v-model="filters.sentiment" border="~ base" bg-black p3 min-h-11 outline-none focus:border-primary>
           <option value="all">
             {{ $t('All sentiment') }}
           </option>
@@ -152,7 +152,7 @@ useHead({
           </option>
         </select>
       </label>
-      <button type="submit" border="~ primary/50" px4 py3 h-max focus:outline-primary>
+      <button type="submit" border="~ primary/50" px4 py3 min-h-11 h-max focus:outline-primary>
         {{ $t('Apply filters') }}
       </button>
     </form>
@@ -170,7 +170,7 @@ useHead({
     <div v-else-if="!data?.reviews.length" border="~ base" bg-white:5 p5 op70>
       {{ $t('No reviews match these filters.') }}
     </div>
-    <div v-else border="~ base" overflow-x-auto>
+    <div v-else border="~ base" overflow-x-auto aria-label="Review moderation table">
       <table w-full text-left text-sm>
         <thead bg-white:8>
           <tr>
@@ -242,7 +242,7 @@ useHead({
                 <button
                   type="button"
                   border="~ primary/50"
-                  px3 py2
+                  px3 py2 min-h-11
                   :disabled="!!busyReviewId || review.status === 'hidden_by_admin'"
                   disabled:op40
                   focus:outline-primary
@@ -255,7 +255,7 @@ useHead({
                   type="button"
                   border="~ red/50"
                   text-red:1
-                  px3 py2
+                  px3 py2 min-h-11
                   :disabled="!!busyReviewId || review.status === 'deleted_by_admin'"
                   disabled:op40
                   focus:outline-primary

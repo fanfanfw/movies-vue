@@ -2,6 +2,7 @@ import type { Prisma } from '@prisma/client'
 import { z } from 'zod'
 import { requireAdminUser } from '../../../utils/auth'
 import { prisma } from '../../../utils/prisma'
+import { serializeAdminReview } from '../../../utils/reviews'
 
 const adminReviewsQuerySchema = z.object({
   q: z.string().trim().optional(),
@@ -61,23 +62,6 @@ export default defineEventHandler(async (event) => {
   })
 
   return {
-    reviews: reviews.map(review => ({
-      id: review.id,
-      tmdbMediaType: review.tmdbMediaType,
-      tmdbMediaId: review.tmdbMediaId,
-      tmdbTitleSnapshot: review.tmdbTitleSnapshot,
-      content: review.content,
-      sentimentLabel: review.sentimentLabel,
-      sentimentConfidence: review.sentimentConfidence,
-      sentimentScoresJson: review.sentimentScoresJson,
-      modelVersion: review.modelVersion,
-      status: review.status,
-      moderationMessage: review.moderationMessage,
-      moderatedAt: review.moderatedAt?.toISOString() ?? null,
-      moderatedBy: review.moderatedBy,
-      createdAt: review.createdAt.toISOString(),
-      updatedAt: review.updatedAt.toISOString(),
-      user: review.user,
-    })),
+    reviews: reviews.map(serializeAdminReview),
   }
 })

@@ -40,6 +40,24 @@ type UserReview = Prisma.ReviewGetPayload<{
   }
 }>
 
+type AdminReview = Prisma.ReviewGetPayload<{
+  include: {
+    user: {
+      select: {
+        id: true
+        username: true
+        email: true
+      }
+    }
+    moderatedBy: {
+      select: {
+        id: true
+        username: true
+      }
+    }
+  }
+}>
+
 export function assertEditableReviewStatus(status: ReviewStatus) {
   if (status === 'hidden_by_admin' || status === 'deleted_by_admin') {
     throw createError({
@@ -104,5 +122,26 @@ export function serializeSavedReview(review: {
     status: review.status,
     createdAt: review.createdAt.toISOString(),
     updatedAt: review.updatedAt.toISOString(),
+  }
+}
+
+export function serializeAdminReview(review: AdminReview) {
+  return {
+    id: review.id,
+    tmdbMediaType: review.tmdbMediaType,
+    tmdbMediaId: review.tmdbMediaId,
+    tmdbTitleSnapshot: review.tmdbTitleSnapshot,
+    content: review.content,
+    sentimentLabel: review.sentimentLabel,
+    sentimentConfidence: review.sentimentConfidence,
+    sentimentScoresJson: review.sentimentScoresJson,
+    modelVersion: review.modelVersion,
+    status: review.status,
+    moderationMessage: review.moderationMessage,
+    moderatedAt: review.moderatedAt?.toISOString() ?? null,
+    moderatedBy: review.moderatedBy,
+    createdAt: review.createdAt.toISOString(),
+    updatedAt: review.updatedAt.toISOString(),
+    user: review.user,
   }
 }

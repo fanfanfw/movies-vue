@@ -67,14 +67,14 @@ useHead({
       </p>
     </header>
 
-    <form flex="~ col lg:row gap3" lg:items-end @submit.prevent="() => refresh()">
+    <form flex="~ col lg:row gap3" lg:items-end :aria-busy="pending" @submit.prevent="() => refresh()">
       <label flex="~ col gap2" flex-1>
         <span text-sm op70>{{ $t('Search') }}</span>
-        <input v-model="filters.q" type="search" border="~ base" bg-black p3 outline-none focus:border-primary :placeholder="$t('Username or email')">
+        <input v-model="filters.q" type="search" border="~ base" bg-black p3 min-h-11 outline-none focus:border-primary :placeholder="$t('Username or email')">
       </label>
       <label flex="~ col gap2">
         <span text-sm op70>{{ $t('Role') }}</span>
-        <select v-model="filters.role" border="~ base" bg-black p3 outline-none focus:border-primary>
+        <select v-model="filters.role" border="~ base" bg-black p3 min-h-11 outline-none focus:border-primary>
           <option value="all">
             {{ $t('All roles') }}
           </option>
@@ -88,7 +88,7 @@ useHead({
       </label>
       <label flex="~ col gap2">
         <span text-sm op70>{{ $t('Approval status') }}</span>
-        <select v-model="filters.approvalStatus" border="~ base" bg-black p3 outline-none focus:border-primary>
+        <select v-model="filters.approvalStatus" border="~ base" bg-black p3 min-h-11 outline-none focus:border-primary>
           <option value="all">
             {{ $t('All approval statuses') }}
           </option>
@@ -103,7 +103,7 @@ useHead({
           </option>
         </select>
       </label>
-      <button type="submit" border="~ primary/50" px4 py3 h-max focus:outline-primary>
+      <button type="submit" border="~ primary/50" px4 py3 min-h-11 h-max focus:outline-primary>
         {{ $t('Apply filters') }}
       </button>
     </form>
@@ -117,7 +117,7 @@ useHead({
     <div v-else-if="!data?.users.length" border="~ base" bg-white:5 p5 op70>
       {{ $t('No users match these filters.') }}
     </div>
-    <div v-else border="~ base" overflow-x-auto>
+    <div v-else border="~ base" overflow-x-auto aria-label="Users table">
       <table w-full text-left text-sm>
         <thead bg-white:8>
           <tr>

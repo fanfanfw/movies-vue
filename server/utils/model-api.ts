@@ -48,6 +48,17 @@ export function validatePrediction(response: ModelPredictionResponse): Sentiment
   }
 }
 
+export function isModelValidationError(error: any) {
+  return error?.statusCode === 502 && error?.statusMessage?.startsWith('Model returned')
+}
+
+export function createRecoverableModelError() {
+  return createError({
+    statusCode: 502,
+    statusMessage: 'Review could not be analyzed right now. Please try again.',
+  })
+}
+
 export async function classifySentiment(event: H3Event, text: string): Promise<SentimentClassification> {
   const config = useRuntimeConfig(event)
 
@@ -72,12 +83,9 @@ export async function classifySentiment(event: H3Event, text: string): Promise<S
     return validatePrediction(response)
   }
   catch (error: any) {
-    if (error?.statusCode && error.statusCode !== 404)
+    if (isModelValidationError(error))
       throw error
 
-    throw createError({
-      statusCode: 502,
-      statusMessage: 'Review could not be analyzed right now. Please try again.',
-    })
+    throw createRecoverableModelError()
   }
 }

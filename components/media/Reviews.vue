@@ -187,6 +187,7 @@ onBeforeUnmount(() => {
       p5
       relative
       overflow-hidden
+      :aria-busy="submitting"
       class="review-panel"
       :class="{
         'review-panel-positive': feedback?.label === 'positive',
@@ -204,12 +205,12 @@ onBeforeUnmount(() => {
           </p>
         </div>
 
-        <NuxtLink v-if="!user" to="/login" border="~ primary/50" px4 py2 h-max>
+        <NuxtLink v-if="!user" to="/login" border="~ primary/50" px4 py2 min-h-11 h-max flex items-center focus:outline-primary>
           {{ $t('Log in to write a review.') }}
         </NuxtLink>
       </div>
 
-      <form v-if="canWriteReview" mt6 flex="~ col gap4" @submit.prevent="submitReview">
+      <form v-if="canWriteReview" mt6 flex="~ col gap4" :aria-busy="submitting || deleting" @submit.prevent="submitReview">
         <label flex="~ col gap2">
           <span text-sm op70>{{ isEditMode ? $t('Edit your review') : $t('Write a review') }}</span>
           <textarea
@@ -233,26 +234,27 @@ onBeforeUnmount(() => {
           <p text-sm op50>
             {{ content.length }}/2000
           </p>
-          <div flex gap3>
+          <div flex="~ col sm:row gap3" w-full md:w-auto>
             <button
               v-if="isEditMode"
               type="button"
               border="~ red/50"
               text-red:1
-              px4 py2
+              px4 py2 min-h-11
               :disabled="submitting || deleting"
               disabled:op40
+              focus:outline-primary
               @click="deleteReview"
             >
               {{ deleting ? $t('Deleting...') : $t('Delete') }}
             </button>
-            <button type="submit" bg-primary text-black font-bold px5 py2 :disabled="submitting || deleting" disabled:op50>
+            <button type="submit" bg-primary text-black font-bold px5 py2 min-h-11 :disabled="submitting || deleting" disabled:op50 focus:outline-primary>
               {{ submitting ? $t('Analyzing...') : isEditMode ? $t('Update review') : $t('Submit review') }}
             </button>
           </div>
         </div>
 
-        <div v-if="submitError" border="~ red/40" bg-red:10 p4 text-sm text-red:1>
+        <div v-if="submitError" border="~ red/40" bg-red:10 p4 text-sm text-red:1 role="alert">
           {{ submitError }}
         </div>
       </form>
@@ -261,7 +263,7 @@ onBeforeUnmount(() => {
         {{ $t('Your account must be approved before you can write reviews.') }}
       </div>
 
-      <div v-if="feedback" mt5 aria-live="polite" border="~ base" p4 :class="feedback.label === 'positive' ? 'bg-primary:10' : 'bg-blue:10'">
+      <div v-if="feedback" mt5 aria-live="polite" role="status" border="~ base" p4 :class="feedback.label === 'positive' ? 'bg-primary:10' : 'bg-blue:10'">
         {{ feedback.message }}
       </div>
     </div>
@@ -271,7 +273,7 @@ onBeforeUnmount(() => {
         <h2 text-2xl font-serif>
           {{ $t('Reviews') }}
         </h2>
-        <button type="button" n-link text-sm @click="() => refresh()">
+        <button type="button" n-link text-sm min-h-11 focus:outline-primary @click="() => refresh()">
           {{ $t('Refresh') }}
         </button>
       </div>
@@ -279,7 +281,7 @@ onBeforeUnmount(() => {
       <div v-if="pending" border="~ base" bg-white:5 p5 op70>
         {{ $t('Loading reviews...') }}
       </div>
-      <div v-else-if="error" border="~ red/40" bg-red:10 p5 text-red:1>
+      <div v-else-if="error" border="~ red/40" bg-red:10 p5 text-red:1 role="alert">
         {{ $t('Reviews could not be loaded right now.') }}
       </div>
       <div v-else-if="!sortedReviews.length" border="~ base" bg-white:5 p5 op70>
