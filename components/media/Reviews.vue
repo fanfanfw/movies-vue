@@ -72,6 +72,7 @@ const deleting = ref(false)
 const submitError = ref('')
 const feedback = ref<{
   label: 'positive' | 'negative'
+  title: string
   message: string
 } | null>(null)
 
@@ -107,14 +108,26 @@ function showFeedback(label: 'positive' | 'negative') {
 
   feedback.value = {
     label,
+    title: label === 'positive'
+      ? t('Review appreciated')
+      : t('Critique recorded'),
     message: label === 'positive'
       ? t('Thanks for sharing a bright take. Your review adds a helpful positive signal for this title.')
       : t('Thanks for the honest critique. Your review helps others understand a different side of this title.'),
   }
 
   feedbackTimer.value = setTimeout(() => {
-    feedback.value = null
-  }, 1400)
+    clearFeedback()
+  }, 5700)
+}
+
+function clearFeedback() {
+  if (feedbackTimer.value) {
+    clearTimeout(feedbackTimer.value)
+    feedbackTimer.value = null
+  }
+
+  feedback.value = null
 }
 
 async function submitReview() {
@@ -174,13 +187,46 @@ async function deleteReview() {
 }
 
 onBeforeUnmount(() => {
-  if (feedbackTimer.value)
-    clearTimeout(feedbackTimer.value)
+  clearFeedback()
 })
 </script>
 
 <template>
   <section max-w-300 ma p4 flex="~ col gap8">
+    <Transition name="review-celebration">
+      <div
+        v-if="feedback"
+        class="review-celebration"
+        :class="feedback.label === 'positive' ? 'review-celebration-positive' : 'review-celebration-negative'"
+        role="status"
+        aria-live="polite"
+        @click="clearFeedback"
+      >
+        <div class="celebration-burst celebration-burst-one" />
+        <div class="celebration-burst celebration-burst-two" />
+        <div class="celebration-burst celebration-burst-three" />
+        <div class="celebration-card">
+          <div class="celebration-icon-wrap" aria-hidden="true">
+            <div
+              v-if="feedback.label === 'positive'"
+              class="celebration-icon"
+              i-ph-heart-fill
+            />
+            <div
+              v-else
+              class="celebration-icon"
+              i-ph-heart-break-fill
+            />
+          </div>
+          <h3>{{ feedback.title }}</h3>
+          <p>{{ feedback.message }}</p>
+        </div>
+        <div class="celebration-particles" aria-hidden="true">
+          <span v-for="n in 18" :key="n" />
+        </div>
+      </div>
+    </Transition>
+
     <div
       border="~ base"
       bg-white:5
@@ -359,6 +405,154 @@ onBeforeUnmount(() => {
   resize: vertical;
 }
 
+.review-celebration {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  padding: 24px;
+  background:
+    radial-gradient(circle at 50% 42%, var(--celebration-glow), transparent 34%),
+    rgb(2 5 6 / 88%);
+  color: rgb(250 252 252);
+  cursor: pointer;
+  backdrop-filter: blur(14px);
+}
+
+.review-celebration-positive {
+  --celebration-accent: rgb(42 198 178);
+  --celebration-glow: rgb(42 198 178 / 32%);
+  --celebration-soft: rgb(42 198 178 / 14%);
+}
+
+.review-celebration-negative {
+  --celebration-accent: rgb(248 113 113);
+  --celebration-glow: rgb(248 113 113 / 28%);
+  --celebration-soft: rgb(76 94 160 / 18%);
+}
+
+.celebration-card {
+  position: relative;
+  z-index: 2;
+  width: min(100%, 520px);
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  border: 1px solid rgb(255 255 255 / 16%);
+  padding: clamp(28px, 6vw, 54px);
+  background: rgb(11 14 15 / 72%);
+  text-align: center;
+  box-shadow: 0 32px 120px rgb(0 0 0 / 55%);
+  animation: celebration-card-pop 680ms cubic-bezier(0.2, 1.25, 0.24, 1) both;
+}
+
+.celebration-icon-wrap {
+  display: grid;
+  place-items: center;
+  width: clamp(112px, 19vw, 168px);
+  height: clamp(112px, 19vw, 168px);
+  border: 1px solid color-mix(in srgb, var(--celebration-accent), white 24%);
+  background: var(--celebration-soft);
+  box-shadow:
+    0 0 0 10px rgb(255 255 255 / 4%),
+    0 0 80px var(--celebration-glow);
+  animation: celebration-heart-pulse 920ms ease-in-out infinite alternate;
+}
+
+.celebration-icon {
+  width: clamp(72px, 12vw, 112px);
+  height: clamp(72px, 12vw, 112px);
+  color: var(--celebration-accent);
+  filter: drop-shadow(0 14px 32px rgb(0 0 0 / 45%));
+}
+
+.celebration-card h3 {
+  margin: 10px 0 0;
+  font-family: "DM Serif Display", ui-serif, Georgia, serif;
+  font-size: clamp(2rem, 6vw, 4.4rem);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.celebration-card p {
+  margin: 0;
+  max-width: 38rem;
+  color: rgb(229 236 235 / 82%);
+  font-size: clamp(1rem, 2.2vw, 1.2rem);
+  line-height: 1.65;
+}
+
+.celebration-burst {
+  position: absolute;
+  width: clamp(220px, 38vw, 520px);
+  aspect-ratio: 1;
+  border: 1px solid var(--celebration-accent);
+  opacity: 0;
+  animation: celebration-ring 1800ms ease-out infinite;
+}
+
+.celebration-burst-one {
+  animation-delay: 0ms;
+}
+
+.celebration-burst-two {
+  animation-delay: 320ms;
+}
+
+.celebration-burst-three {
+  animation-delay: 640ms;
+}
+
+.celebration-particles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.celebration-particles span {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 8px;
+  height: 18px;
+  background: var(--celebration-accent);
+  opacity: 0;
+  transform-origin: center;
+  animation: celebration-particle 1400ms ease-out both;
+}
+
+.celebration-particles span:nth-child(1) { --tx: -44vw; --ty: -30vh; animation-delay: 40ms; }
+.celebration-particles span:nth-child(2) { --tx: -31vw; --ty: -42vh; animation-delay: 90ms; }
+.celebration-particles span:nth-child(3) { --tx: -15vw; --ty: -36vh; animation-delay: 30ms; }
+.celebration-particles span:nth-child(4) { --tx: 4vw; --ty: -44vh; animation-delay: 80ms; }
+.celebration-particles span:nth-child(5) { --tx: 19vw; --ty: -36vh; animation-delay: 140ms; }
+.celebration-particles span:nth-child(6) { --tx: 37vw; --ty: -28vh; animation-delay: 70ms; }
+.celebration-particles span:nth-child(7) { --tx: 45vw; --ty: -6vh; animation-delay: 110ms; }
+.celebration-particles span:nth-child(8) { --tx: 38vw; --ty: 20vh; animation-delay: 20ms; }
+.celebration-particles span:nth-child(9) { --tx: 24vw; --ty: 36vh; animation-delay: 120ms; }
+.celebration-particles span:nth-child(10) { --tx: 8vw; --ty: 42vh; animation-delay: 60ms; }
+.celebration-particles span:nth-child(11) { --tx: -10vw; --ty: 42vh; animation-delay: 150ms; }
+.celebration-particles span:nth-child(12) { --tx: -28vw; --ty: 34vh; animation-delay: 100ms; }
+.celebration-particles span:nth-child(13) { --tx: -42vw; --ty: 18vh; animation-delay: 35ms; }
+.celebration-particles span:nth-child(14) { --tx: -46vw; --ty: -8vh; animation-delay: 130ms; }
+.celebration-particles span:nth-child(15) { --tx: -24vw; --ty: -14vh; animation-delay: 170ms; }
+.celebration-particles span:nth-child(16) { --tx: 26vw; --ty: -13vh; animation-delay: 160ms; }
+.celebration-particles span:nth-child(17) { --tx: 28vw; --ty: 10vh; animation-delay: 45ms; }
+.celebration-particles span:nth-child(18) { --tx: -23vw; --ty: 9vh; animation-delay: 115ms; }
+
+.review-celebration-enter-active,
+.review-celebration-leave-active {
+  transition: opacity 240ms ease, filter 240ms ease;
+}
+
+.review-celebration-enter-from,
+.review-celebration-leave-to {
+  opacity: 0;
+  filter: blur(6px);
+}
+
 @keyframes warm-review-glow {
   0% { opacity: 0; transform: scale(0.95); }
   35% { opacity: 1; transform: scale(1); }
@@ -388,9 +582,35 @@ onBeforeUnmount(() => {
   100% { transform: translateX(100%); }
 }
 
+@keyframes celebration-card-pop {
+  0% { opacity: 0; transform: translateY(24px) scale(0.86); }
+  64% { opacity: 1; transform: translateY(-4px) scale(1.03); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes celebration-heart-pulse {
+  0% { transform: scale(1) rotate(-1deg); }
+  100% { transform: scale(1.055) rotate(1deg); }
+}
+
+@keyframes celebration-ring {
+  0% { opacity: 0.38; transform: scale(0.58) rotate(0deg); }
+  100% { opacity: 0; transform: scale(1.35) rotate(16deg); }
+}
+
+@keyframes celebration-particle {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.4) rotate(0deg); }
+  20% { opacity: 1; }
+  100% { opacity: 0; transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) scale(1) rotate(180deg); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .review-panel::before,
-  .review-panel::after {
+  .review-panel::after,
+  .celebration-card,
+  .celebration-icon-wrap,
+  .celebration-burst,
+  .celebration-particles span {
     animation: none;
   }
 }
