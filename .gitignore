@@ -5,6 +5,7 @@ dist
 .nuxt
 .env
 .nitro
+node_modules/.prisma
 .DS_Store
 .idea
 .vercel

@@ -3,6 +3,7 @@ import process from 'node:process'
 const isDev = process.env.NODE_ENV === 'development'
 
 const apiBaseUrl = process.env.BASE_URL || 'https://movies-proxy.vercel.app'
+const appOrigin = process.env.APP_ORIGIN || 'http://localhost:3000'
 
 export default defineNuxtConfig({
   modules: ['@vueuse/nuxt', '@unocss/nuxt', '@nuxt/image', '@nuxtjs/i18n', '@nuxtjs/html-validator', '@nuxt/test-utils/module'],
@@ -14,10 +15,15 @@ export default defineNuxtConfig({
   },
 
   routeRules: {
+    '/api/**': { cache: false },
     '/**': isDev ? {} : { cache: { swr: true, maxAge: 120, staleMaxAge: 60, headersOnly: true } },
   },
 
   runtimeConfig: {
+    appOrigin,
+    modelApiBaseUrl: process.env.MODEL_API_BASE_URL || 'http://127.0.0.1:8000',
+    modelApiKey: process.env.MODEL_API_KEY || '',
+    sessionSecret: process.env.SESSION_SECRET || '',
     public: {
       apiBaseUrl,
     },
