@@ -1,14 +1,21 @@
-<script setup>
+<script setup lang="ts">
+import { useAuth } from '~/composables/auth'
 import '@unocss/reset/tailwind.css'
+
+const { user, refreshUser } = useAuth()
+
+await refreshUser()
+
+const showNavBar = computed(() => !!user.value)
 
 useHead({
   htmlAttrs: {
     lang: 'en',
   },
-  charset: 'utf-8',
   title: 'Nuxt Movies',
   titleTemplate: title => (title !== 'Nuxt Movies' ? `${title} · Nuxt Movies` : title),
   meta: [
+    { charset: 'utf-8' },
     { name: 'description', content: 'A TMDB client built with Nuxt Image to show the potential of it ✨' },
     { property: 'og:image', content: 'https://movies.nuxt.space/social-card.png' },
     { name: 'twitter:card', content: 'summary_large_image' },
@@ -27,11 +34,20 @@ useHead({
 
 <template>
   <NuxtLoadingIndicator />
-  <div h-full w-full font-sans grid="~ lt-lg:rows-[1fr_max-content] lg:cols-[max-content_1fr]" of-hidden view-transition-app transition duration-0>
+  <div
+    h-full
+    w-full
+    font-sans
+    of-hidden
+    view-transition-app
+    transition
+    duration-0
+    :class="showNavBar ? 'grid lt-lg:grid-rows-[1fr_max-content] lg:grid-cols-[max-content_1fr]' : 'block'"
+  >
     <div id="app-scroller" of-x-hidden of-y-auto relative>
       <NuxtPage />
     </div>
-    <NavBar lg:order-first />
+    <NavBar v-if="showNavBar" lg:order-first />
     <IframeModal />
     <PhotoModal />
   </div>

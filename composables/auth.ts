@@ -35,6 +35,10 @@ export function useAuth() {
       user.value = response.user
       return user.value
     }
+    catch {
+      user.value = null
+      return null
+    }
     finally {
       pending.value = false
     }

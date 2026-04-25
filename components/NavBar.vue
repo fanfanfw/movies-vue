@@ -13,6 +13,7 @@ async function handleLogout() {
 
 <template>
   <div
+    v-if="user"
     flex="~ row lg:col"
     justify-evenly items-center
     py5 lg:px5
@@ -54,30 +55,16 @@ async function handleLogout() {
       />
       <span sr-only>{{ $t('Admin') }}</span>
     </NuxtLink>
-    <NuxtLink v-if="user" v-slot="{ isActive }" to="/profile" :title="$t('Profile')" :aria-label="$t('Profile')">
+    <NuxtLink v-slot="{ isActive }" to="/profile" :title="$t('Profile')" :aria-label="$t('Profile')">
       <div
         text-2xl
         :class="isActive ? 'i-ph-user-circle-fill text-primary' : 'i-ph-user-circle'"
       />
       <span sr-only>{{ $t('Profile') }}</span>
     </NuxtLink>
-    <button v-if="user" type="button" :title="$t('Logout')" :aria-label="$t('Logout')" n-link @click="handleLogout">
+    <button type="button" :title="$t('Logout')" :aria-label="$t('Logout')" n-link @click="handleLogout">
       <div i-ph-sign-out text-2xl />
       <span sr-only>{{ $t('Logout') }}</span>
     </button>
-    <NuxtLink v-if="!user" v-slot="{ isActive }" to="/login" :title="$t('Login')" :aria-label="$t('Login')">
-      <div
-        text-2xl
-        :class="isActive ? 'i-ph-sign-in-fill text-primary' : 'i-ph-sign-in'"
-      />
-      <span sr-only>{{ $t('Login') }}</span>
-    </NuxtLink>
-    <NuxtLink v-if="!user" v-slot="{ isActive }" to="/register" :title="$t('Register')" :aria-label="$t('Register')">
-      <div
-        text-2xl
-        :class="isActive ? 'i-ph-user-plus-fill text-primary' : 'i-ph-user-plus'"
-      />
-      <span sr-only>{{ $t('Register') }}</span>
-    </NuxtLink>
   </div>
 </template>
