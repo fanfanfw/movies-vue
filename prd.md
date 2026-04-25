@@ -968,3 +968,473 @@ To reduce implementation ambiguity, an AI agent should follow these defaults unl
 - Keep new route pages under `pages/login.vue`, `pages/register.vue`, `pages/profile.vue`, and `pages/admin/*.vue`.
 - Update `.env.example` with required variable names but no real secrets.
 - Do not edit the proxy app unless required for TMDB metadata fetch behavior.
+
+## 20. Technical Implementation Contract
+
+This section is the implementation contract for AI agents. If another section is less specific, follow this section. If this section conflicts with an explicit project-owner instruction, follow the project-owner instruction.
+
+### 20.1 Prisma Schema Contract
+
+Use Prisma with PostgreSQL. Create `prisma/schema.prisma` with this structure unless the project owner explicitly changes it.
+
+```prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  admin
+  user
+}
+
+enum ApprovalStatus {
+  pending
+  approved
+  rejected
+}
+
+enum MediaType {
+  movie
+  tv
+}
+
+enum SentimentLabel {
+  positive
+  negative
+}
+
+enum ReviewStatus {
+  visible
+  hidden_by_admin
+  deleted_by_admin
+  deleted_by_user
+}
+
+model User {
+  id             String         @id @default(cuid())
+  username       String         @unique
+  email          String         @unique
+  passwordHash   String
+  role           UserRole       @default(user)
+  approvalStatus ApprovalStatus @default(pending)
+  approvedAt     DateTime?
+  approvedById   String?
+  approvedBy     User?          @relation("UserApprover", fields: [approvedById], references: [id], onDelete: SetNull)
+  approvedUsers  User[]         @relation("UserApprover")
+  sessions       Session[]
+  reviews        Review[]       @relation("UserReviews")
+  moderatedReviews Review[]     @relation("ReviewModerator")
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@index([approvalStatus])
+  @@index([role])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model Review {
+  id                     String         @id @default(cuid())
+  userId                 String
+  user                   User           @relation("UserReviews", fields: [userId], references: [id], onDelete: Cascade)
+  tmdbMediaType          MediaType
+  tmdbMediaId            String
+  tmdbTitleSnapshot      String
+  tmdbPosterPathSnapshot String?
+  content                String         @db.Text
+  sentimentLabel         SentimentLabel
+  sentimentConfidence    Float
+  sentimentScoresJson    Json
+  modelVersion           String?
+  status                 ReviewStatus   @default(visible)
+  moderationMessage      String?
+  moderatedAt            DateTime?
+  moderatedById          String?
+  moderatedBy            User?          @relation("ReviewModerator", fields: [moderatedById], references: [id], onDelete: SetNull)
+  createdAt              DateTime       @default(now())
+  updatedAt              DateTime       @updatedAt
+
+  @@unique([userId, tmdbMediaType, tmdbMediaId])
+  @@index([tmdbMediaType, tmdbMediaId, status])
+  @@index([status])
+  @@index([sentimentLabel])
+  @@index([createdAt])
+}
+```
+
+Phase 1 creates Prisma setup, `User`, and `Session`. Phase 3 adds `Review`, `MediaType`, `SentimentLabel`, and `ReviewStatus` if they were not already added. Do not leave the schema in a state where `pnpm prisma validate` fails.
+
+### 20.2 Auth and Session Contract
+
+- Do not use JWT, Nuxt Auth, NextAuth, Lucia, Supabase Auth, Firebase Auth, or any full authentication framework in V1.
+- `SESSION_SECRET` is reserved for future use and must not change the opaque database-backed session design.
+- The browser stores only the raw opaque session token in the `movies_session` HTTP-only cookie.
+- The database stores only `sha256(rawSessionToken)` in `Session.tokenHash`.
+- `GET /api/auth/me` is the source of truth for client auth state.
+- Pending and rejected users never receive an active session.
+- Mutating server routes must call a shared Origin validation helper before performing writes.
+- Shared auth helpers should live under `server/utils/auth.ts`, `server/utils/session.ts`, and `server/utils/password.ts`.
+
+### 20.3 API Response Contract
+
+All API errors should use this JSON shape:
+
+```json
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Readable message for the UI."
+  }
+}
+```
+
+Use these status codes:
+
+- `400` for validation errors and invalid payloads.
+- `401` for missing or expired authentication.
+- `403` for authenticated users without required role or approval status.
+- `404` for missing users, reviews, or media records.
+- `409` for unique username/email conflicts.
+- `429` for rate-limit failures.
+- `502` for ML API failure, invalid ML response, or TMDB metadata fetch failure during review save.
+
+`GET /api/auth/me` returns:
+
+```json
+{
+  "user": {
+    "id": "user_id",
+    "username": "reviewer",
+    "email": "reviewer@example.com",
+    "role": "user",
+    "approvalStatus": "approved",
+    "createdAt": "2026-04-25T08:00:00.000Z"
+  }
+}
+```
+
+If unauthenticated, `GET /api/auth/me` returns `200` with:
+
+```json
+{
+  "user": null
+}
+```
+
+`POST /api/auth/register` returns:
+
+```json
+{
+  "user": {
+    "id": "user_id",
+    "username": "reviewer",
+    "email": "reviewer@example.com",
+    "role": "user",
+    "approvalStatus": "pending"
+  },
+  "redirectTo": "/login?status=pending"
+}
+```
+
+`POST /api/auth/login` returns:
+
+```json
+{
+  "user": {
+    "id": "user_id",
+    "username": "reviewer",
+    "email": "reviewer@example.com",
+    "role": "user",
+    "approvalStatus": "approved"
+  },
+  "redirectTo": "/"
+}
+```
+
+Pending and rejected login attempts do not create a cookie and return `403` with the shared error shape plus a redirect target:
+
+```json
+{
+  "error": {
+    "code": "ACCOUNT_PENDING",
+    "message": "Your account is waiting for admin approval."
+  },
+  "redirectTo": "/login?status=pending"
+}
+```
+
+`GET /api/reviews?type=movie&tmdbId=83533` returns only public-safe review data:
+
+```json
+{
+  "reviews": [
+    {
+      "id": "review_id",
+      "username": "reviewer",
+      "tmdbMediaType": "movie",
+      "tmdbMediaId": "83533",
+      "content": "The visuals were beautiful.",
+      "sentimentLabel": "positive",
+      "status": "visible",
+      "createdAt": "2026-04-25T08:00:00.000Z",
+      "updatedAt": "2026-04-25T08:00:00.000Z"
+    }
+  ],
+  "currentUserReview": null
+}
+```
+
+For admin-hidden and admin-deleted reviews, the public endpoint must return placeholder content only and must not return the original review text.
+
+`POST /api/reviews` and `PATCH /api/reviews/:id` return:
+
+```json
+{
+  "review": {
+    "id": "review_id",
+    "content": "The visuals were beautiful.",
+    "sentimentLabel": "positive",
+    "status": "visible",
+    "createdAt": "2026-04-25T08:00:00.000Z",
+    "updatedAt": "2026-04-25T08:00:00.000Z"
+  },
+  "classification": {
+    "label": "positive",
+    "is_positive": true
+  }
+}
+```
+
+`DELETE /api/reviews/:id` soft-deletes the current user's own review and returns:
+
+```json
+{
+  "review": {
+    "id": "review_id",
+    "status": "deleted_by_user"
+  }
+}
+```
+
+Admin list endpoints may include `email`, `sentimentConfidence`, `sentimentScoresJson`, and `modelVersion`. Public/user endpoints must not include raw confidence or raw scores.
+
+### 20.4 Seed Script Contract
+
+Add these package scripts if missing:
+
+```json
+{
+  "db:generate": "prisma generate",
+  "db:migrate": "prisma migrate dev",
+  "db:seed": "node prisma/seed.mjs"
+}
+```
+
+The admin seed script must support this exact command shape:
+
+```bash
+pnpm db:seed -- --username admin --email admin@example.com --password "change-me-at-runtime"
+```
+
+Seed behavior:
+
+- Create the user if the email and username do not exist.
+- If the admin user already exists, update `role` to `admin` and `approvalStatus` to `approved`.
+- Hash the provided password with argon2id.
+- Never print the password or password hash.
+
+### 20.5 Frontend Integration Contract
+
+Use these exact frontend integration points unless the project owner changes them:
+
+- Create `composables/auth.ts` for client auth state, backed by `GET /api/auth/me`.
+- Create `components/review/MediaReviews.vue` for the media-detail review module.
+- Create smaller review components only if they reduce complexity, for example `components/review/ReviewForm.vue`, `components/review/ReviewList.vue`, and `components/review/SentimentFeedback.vue`.
+- Render the review module in `components/media/Overview.vue` immediately after `<MediaInfo :item="item" :type="type" />` and before the Cast carousel.
+- Do not change `components/media/Details.vue` tab behavior.
+- Do not redesign `pages/[type]/[id].vue`, `components/media/Hero.vue`, or existing browse/search pages.
+- Update `components/NavBar.vue` only to add auth/admin/profile/logout navigation.
+- Keep `NavBar` visually icon-first and compact. Preferred icons: login `i-ph-sign-in`, register `i-ph-user-plus`, profile `i-ph-user-circle`, admin `i-ph-shield`, logout `i-ph-sign-out`.
+- Add user-facing copy to `internationalization/en.json` and use `$t(...)` in Vue templates.
+- Do not translate every non-English locale in V1 unless explicitly requested.
+
+Required pages:
+
+```text
+pages/login.vue
+pages/register.vue
+pages/profile.vue
+pages/admin/index.vue
+pages/admin/approvals.vue
+pages/admin/reviews.vue
+pages/admin/users.vue
+```
+
+### 20.6 Server File Contract
+
+Use this server layout unless a simpler equivalent is clearly justified:
+
+```text
+server/api/auth/register.post.ts
+server/api/auth/login.post.ts
+server/api/auth/logout.post.ts
+server/api/auth/me.get.ts
+
+server/api/reviews/index.get.ts
+server/api/reviews/index.post.ts
+server/api/reviews/[id].patch.ts
+server/api/reviews/[id].delete.ts
+server/api/user/reviews.get.ts
+
+server/api/admin/index.get.ts
+server/api/admin/approvals/index.get.ts
+server/api/admin/approvals/[userId]/approve.post.ts
+server/api/admin/approvals/[userId]/reject.post.ts
+server/api/admin/reviews/index.get.ts
+server/api/admin/reviews/[id]/status.patch.ts
+server/api/admin/users.get.ts
+
+server/utils/prisma.ts
+server/utils/auth.ts
+server/utils/session.ts
+server/utils/password.ts
+server/utils/rate-limit.ts
+server/utils/csrf.ts
+server/utils/reviews.ts
+server/utils/model-api.ts
+server/utils/tmdb.ts
+```
+
+Do not edit the `proxy/` workspace unless review submission cannot fetch TMDB metadata through the existing TMDB proxy route.
+
+### 20.7 Per-Phase File Scope and Verification
+
+Phase 1 allowed scope:
+
+- `package.json`
+- `pnpm-lock.yaml`
+- `nuxt.config.ts`
+- `.env.example`
+- `prisma/**`
+- `server/utils/prisma.ts`
+- `server/utils/auth.ts`
+- `server/utils/session.ts`
+- `server/utils/password.ts`
+- `server/utils/csrf.ts`
+- `server/utils/rate-limit.ts`
+- `server/api/auth/me.get.ts`
+- focused tests for auth/session utilities
+
+Phase 1 verification:
+
+```bash
+pnpm prisma validate
+pnpm prisma generate
+pnpm lint
+pnpm typecheck
+pnpm test:unit
+```
+
+Phase 2 allowed scope:
+
+- auth API routes
+- login/register/profile pages
+- admin approvals API and page
+- `components/NavBar.vue`
+- `composables/auth.ts`
+- `internationalization/en.json`
+- focused tests for registration, login, approval guards, and auth UI states
+
+Phase 2 verification:
+
+```bash
+pnpm lint
+pnpm typecheck
+pnpm test:unit
+```
+
+Phase 3 allowed scope:
+
+- Review Prisma model and migration
+- review API routes
+- `server/utils/reviews.ts`
+- `server/utils/model-api.ts`
+- `server/utils/tmdb.ts`
+- `server/api/user/reviews.get.ts`
+- focused tests for review validation, one-review-per-media, model API success/failure, and owner authorization
+
+Phase 3 verification:
+
+```bash
+pnpm prisma validate
+pnpm prisma generate
+pnpm lint
+pnpm typecheck
+pnpm test:unit
+```
+
+Phase 4 allowed scope:
+
+- `components/media/Overview.vue`
+- `components/review/**`
+- `composables/auth.ts`
+- `internationalization/en.json`
+- focused component tests for review form/list/feedback states
+
+Phase 4 verification:
+
+```bash
+pnpm lint
+pnpm typecheck
+pnpm test:unit
+```
+
+Phase 5 allowed scope:
+
+- admin API routes
+- admin pages
+- admin navigation additions
+- `internationalization/en.json`
+- focused tests for admin authorization, approval, moderation, and admin-only confidence visibility
+
+Phase 5 verification:
+
+```bash
+pnpm lint
+pnpm typecheck
+pnpm test:unit
+```
+
+Phase 6 allowed scope:
+
+- accessibility fixes
+- mobile/responsive polish
+- additional unit, integration, or e2e tests
+- small refactors needed to make tests reliable
+
+Phase 6 verification:
+
+```bash
+pnpm prisma validate
+pnpm prisma generate
+pnpm lint
+pnpm typecheck
+pnpm test:unit
+```
+
+If PostgreSQL, the TMDB proxy, or the ML API is unavailable, the agent must still run all non-dependent verification commands and report the exact skipped or failed command with the reason.
