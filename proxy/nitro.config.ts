@@ -3,11 +3,14 @@ import { defineNitroConfig } from 'nitropack/config'
 
 export default defineNitroConfig({
   routeRules: {
-    '/**': { cors: true, swr: 3600 },
+    '/**': { cors: true },
   },
+
   runtimeConfig: {
     tmdb: {
       apiKey: process.env.TMDB_API_KEY || '',
     },
   },
+
+  compatibilityDate: '2026-04-21',
 })

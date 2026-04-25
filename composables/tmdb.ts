@@ -2,15 +2,13 @@ import type { Credits, Media, MediaType, PageResult, Person } from '~/types'
 import { LRUCache } from 'lru-cache'
 import { hash as ohash } from 'ohash'
 
-// const apiBaseUrl = 'http://localhost:3001'
-const apiBaseUrl = 'https://movies-proxy.vercel.app'
-
 const promiseCache = new LRUCache<string, any>({
   max: 500,
   ttl: 2000 * 60 * 60, // 2 hour
 })
 
 async function _fetchTMDB(url: string, params: Record<string, string | number | boolean | undefined> = {}) {
+  const { public: { apiBaseUrl } } = useRuntimeConfig()
   if (params.language == null) {
     const locale = useNuxtApp().$i18n.locale
     params.language = unref(locale)
