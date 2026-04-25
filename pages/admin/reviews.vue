@@ -242,7 +242,7 @@ useHead({
                 <button
                   type="button"
                   class="ui-button ui-button-primary ui-button-compact"
-                  :disabled="!!busyReviewId || review.status === 'hidden_by_admin'"
+                  :disabled="!!busyReviewId || review.status !== 'visible'"
                   focus:outline-primary
                   :aria-label="$t('Hide review')"
                   @click="updateReviewStatus(review.id, 'hidden_by_admin')"

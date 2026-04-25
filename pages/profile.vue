@@ -12,6 +12,16 @@ interface UserReview {
   status: 'visible' | 'hidden_by_admin' | 'deleted_by_admin' | 'deleted_by_user'
   createdAt: string
   updatedAt: string
+  history: ReviewHistoryEntry[]
+}
+
+interface ReviewHistoryEntry {
+  id: string
+  action: string
+  content: string
+  sentimentLabel: string
+  status: UserReview['status']
+  createdAt: string
 }
 
 const { user, refreshUser, isAdmin } = useAuth()
@@ -46,6 +56,16 @@ function statusLabel(status: UserReview['status']) {
   if (status === 'deleted_by_admin')
     return t('Removed by admin')
   return t('Deleted')
+}
+
+function historyActionLabel(action: string) {
+  if (action === 'created')
+    return t('Created')
+  if (action === 'updated_after_admin_hide')
+    return t('Updated after admin hide')
+  if (action === 'resubmitted_after_admin_removal')
+    return t('Resubmitted after admin removal')
+  return t('Updated')
 }
 
 async function deleteReview(reviewId: string) {
@@ -245,6 +265,27 @@ useHead({
             <p line-clamp-3 op80>
               {{ review.content }}
             </p>
+            <details v-if="review.history.length" border="~ base" bg-white:5 p3>
+              <summary cursor-pointer text-sm font-bold focus:outline-primary>
+                {{ $t('Review history') }} ({{ review.history.length }})
+              </summary>
+              <div mt3 flex="~ col gap3">
+                <article v-for="entry in review.history" :key="entry.id" border="t base" pt3>
+                  <div flex flex-wrap gap2 text-xs op70>
+                    <span>{{ historyActionLabel(entry.action) }}</span>
+                    <span>{{ new Date(entry.createdAt).toLocaleString() }}</span>
+                    <span>{{ entry.sentimentLabel }}</span>
+                    <span>{{ statusLabel(entry.status) }}</span>
+                  </div>
+                  <p mt2 text-sm line-clamp-4 op85>
+                    {{ entry.content }}
+                  </p>
+                </article>
+              </div>
+            </details>
+            <div v-else border="~ base" bg-white:5 p3 text-sm op60>
+              {{ $t('No review history yet.') }}
+            </div>
             <button
               v-if="review.status === 'visible'"
               type="button"

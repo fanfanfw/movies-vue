@@ -39,6 +39,7 @@ model User {
   approvedUsers    User[]         @relation("UserApprover")
   sessions         Session[]
   reviews          Review[]       @relation("ReviewAuthor")
+  reviewHistory    ReviewHistory[]
   moderatedReviews Review[]       @relation("ReviewModerator")
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
@@ -78,6 +79,7 @@ model Review {
   moderatedAt            DateTime?
   moderatedById          String?
   moderatedBy            User?        @relation("ReviewModerator", fields: [moderatedById], references: [id], onDelete: SetNull)
+  history                ReviewHistory[]
   createdAt              DateTime     @default(now())
   updatedAt              DateTime     @updatedAt
 
@@ -86,4 +88,21 @@ model Review {
   @@index([sentimentLabel])
   @@index([status])
   @@index([moderatedById])
+}
+
+model ReviewHistory {
+  id                  String       @id @default(cuid())
+  reviewId            String
+  review              Review       @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  userId              String
+  user                User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action              String
+  content             String
+  sentimentLabel      String
+  sentimentConfidence Float
+  status              ReviewStatus
+  createdAt           DateTime     @default(now())
+
+  @@index([reviewId, createdAt])
+  @@index([userId, createdAt])
 }

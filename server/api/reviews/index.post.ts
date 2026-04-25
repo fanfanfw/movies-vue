@@ -40,6 +40,12 @@ export default defineEventHandler(async (event) => {
     classifySentiment(event, content),
   ])
 
+  const reviewAction = existingReview
+    ? existingReview.status === 'deleted_by_admin'
+      ? 'resubmitted_after_admin_removal'
+      : 'updated'
+    : 'created'
+
   const review = existingReview
     ? await prisma.review.update({
       where: { id: existingReview.id },
@@ -55,6 +61,16 @@ export default defineEventHandler(async (event) => {
         moderationMessage: null,
         moderatedAt: null,
         moderatedById: null,
+        history: {
+          create: {
+            userId: user.id,
+            action: reviewAction,
+            content,
+            sentimentLabel: classification.label,
+            sentimentConfidence: classification.confidence,
+            status: 'visible',
+          },
+        },
       },
       select: {
         id: true,
@@ -78,6 +94,16 @@ export default defineEventHandler(async (event) => {
         sentimentScoresJson: classification.scores,
         modelVersion: classification.modelVersion,
         status: 'visible',
+        history: {
+          create: {
+            userId: user.id,
+            action: reviewAction,
+            content,
+            sentimentLabel: classification.label,
+            sentimentConfidence: classification.confidence,
+            status: 'visible',
+          },
+        },
       },
       select: {
         id: true,

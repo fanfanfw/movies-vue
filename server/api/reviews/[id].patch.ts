@@ -52,6 +52,9 @@ export default defineEventHandler(async (event) => {
   assertEditableReviewStatus(existingReview.status)
 
   const content = parsed.data.content
+  const reviewAction = existingReview.status === 'hidden_by_admin'
+    ? 'updated_after_admin_hide'
+    : 'updated'
   const [media, classification] = await Promise.all([
     fetchTmdbMediaSnapshot(event, existingReview.tmdbMediaType as 'movie' | 'tv', existingReview.tmdbMediaId),
     classifySentiment(event, content),
@@ -71,6 +74,16 @@ export default defineEventHandler(async (event) => {
       moderationMessage: null,
       moderatedAt: null,
       moderatedById: null,
+      history: {
+        create: {
+          userId: user.id,
+          action: reviewAction,
+          content,
+          sentimentLabel: classification.label,
+          sentimentConfidence: classification.confidence,
+          status: 'visible',
+        },
+      },
     },
     select: {
       id: true,

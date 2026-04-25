@@ -37,6 +37,16 @@ type UserReview = Prisma.ReviewGetPayload<{
     status: true
     createdAt: true
     updatedAt: true
+    history: {
+      select: {
+        id: true
+        action: true
+        content: true
+        sentimentLabel: true
+        status: true
+        createdAt: true
+      }
+    }
   }
 }>
 
@@ -104,6 +114,14 @@ export function serializeUserSafeReview(review: UserReview) {
     status: review.status,
     createdAt: review.createdAt.toISOString(),
     updatedAt: review.updatedAt.toISOString(),
+    history: review.history.map(entry => ({
+      id: entry.id,
+      action: entry.action,
+      content: entry.content,
+      sentimentLabel: entry.sentimentLabel,
+      status: entry.status,
+      createdAt: entry.createdAt.toISOString(),
+    })),
   }
 }
 
