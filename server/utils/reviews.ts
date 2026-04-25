@@ -1,0 +1,108 @@
+import type { Prisma, ReviewStatus } from '@prisma/client'
+import { createError } from 'h3'
+import { z } from 'zod'
+
+export const reviewTextSchema = z.string().trim().min(10).max(2000)
+
+export const reviewSubmissionSchema = z.object({
+  tmdbMediaType: z.enum(['movie', 'tv']),
+  tmdbMediaId: z.string().trim().regex(/^\d+$/),
+  content: reviewTextSchema,
+})
+
+export const reviewUpdateSchema = z.object({
+  content: reviewTextSchema,
+})
+
+type ReviewWithUser = Prisma.ReviewGetPayload<{
+  include: {
+    user: {
+      select: {
+        id: true
+        username: true
+      }
+    }
+  }
+}>
+
+type UserReview = Prisma.ReviewGetPayload<{
+  select: {
+    id: true
+    tmdbMediaType: true
+    tmdbMediaId: true
+    tmdbTitleSnapshot: true
+    tmdbPosterPathSnapshot: true
+    content: true
+    sentimentLabel: true
+    status: true
+    createdAt: true
+    updatedAt: true
+  }
+}>
+
+export function assertEditableReviewStatus(status: ReviewStatus) {
+  if (status === 'hidden_by_admin' || status === 'deleted_by_admin') {
+    throw createError({
+      statusCode: 403,
+      statusMessage: 'This review has been moderated and cannot be edited.',
+    })
+  }
+}
+
+export function serializePublicReview(review: ReviewWithUser) {
+  const isHidden = review.status === 'hidden_by_admin'
+  const isDeletedByAdmin = review.status === 'deleted_by_admin'
+
+  return {
+    id: review.id,
+    user: {
+      id: review.user.id,
+      username: review.user.username,
+    },
+    tmdbMediaType: review.tmdbMediaType,
+    tmdbMediaId: review.tmdbMediaId,
+    content: isHidden
+      ? 'This review has been hidden by an administrator.'
+      : isDeletedByAdmin
+        ? 'This review was removed by an administrator.'
+        : review.content,
+    sentimentLabel: review.status === 'visible' ? review.sentimentLabel : null,
+    status: review.status,
+    isModerationPlaceholder: isHidden || isDeletedByAdmin,
+    createdAt: review.createdAt.toISOString(),
+    updatedAt: review.updatedAt.toISOString(),
+  }
+}
+
+export function serializeUserSafeReview(review: UserReview) {
+  return {
+    id: review.id,
+    tmdbMediaType: review.tmdbMediaType,
+    tmdbMediaId: review.tmdbMediaId,
+    tmdbTitleSnapshot: review.tmdbTitleSnapshot,
+    tmdbPosterPathSnapshot: review.tmdbPosterPathSnapshot,
+    content: review.content,
+    sentimentLabel: review.sentimentLabel,
+    status: review.status,
+    createdAt: review.createdAt.toISOString(),
+    updatedAt: review.updatedAt.toISOString(),
+  }
+}
+
+export function serializeSavedReview(review: {
+  id: string
+  content: string
+  sentimentLabel: string
+  status: ReviewStatus
+  createdAt: Date
+  updatedAt: Date
+}) {
+  return {
+    id: review.id,
+    content: review.content,
+    sentimentLabel: review.sentimentLabel,
+    status: review.status,
+    createdAt: review.createdAt.toISOString(),
+    updatedAt: review.updatedAt.toISOString(),
+  }
+}

@@ -87,5 +87,12 @@
   "Approve": "Approve",
   "Reject": "Reject",
   "Working...": "Working...",
-  "Action failed. Please try again.": "Action failed. Please try again."
+  "Action failed. Please try again.": "Action failed. Please try again.",
+  "No reviews yet.": "No reviews yet.",
+  "Visible": "Visible",
+  "Hidden by admin": "Hidden by admin",
+  "Removed by admin": "Removed by admin",
+  "Deleted": "Deleted",
+  "Delete": "Delete",
+  "Review could not be deleted. Please try again.": "Review could not be deleted. Please try again."
 }
