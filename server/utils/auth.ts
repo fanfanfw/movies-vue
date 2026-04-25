@@ -1,6 +1,6 @@
 import type { H3Event } from 'h3'
 import { createError } from 'h3'
-import { resolveSession } from './session'
+import { deleteCurrentSession, resolveSession } from './session'
 
 export interface AuthUser {
   id: string
@@ -8,6 +8,7 @@ export interface AuthUser {
   email: string
   role: 'admin' | 'user'
   approvalStatus: 'pending' | 'approved' | 'rejected'
+  isActive: boolean
   createdAt: Date
 }
 
@@ -24,6 +25,16 @@ export async function requireUser(event: H3Event) {
       statusMessage: 'Authentication required.',
     })
   }
+
+  if (!user.isActive) {
+    await deleteCurrentSession(event)
+    throw createError({
+      statusCode: 403,
+      statusMessage: 'Your account has been disabled by an administrator.',
+      data: { status: 'disabled' },
+    })
+  }
+
   return user
 }
 

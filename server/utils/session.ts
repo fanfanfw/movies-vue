@@ -73,6 +73,7 @@ export async function resolveSession(event: H3Event) {
           email: true,
           role: true,
           approvalStatus: true,
+          isActive: true,
           createdAt: true,
         },
       },

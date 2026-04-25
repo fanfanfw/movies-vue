@@ -50,7 +50,9 @@ export default defineEventHandler(async (event) => {
         userId: user.id,
         tmdbMediaType: type,
         tmdbMediaId: tmdbId,
-        status: 'visible',
+        status: {
+          in: ['visible', 'hidden_by_admin'],
+        },
       },
       select: {
         id: true,

@@ -35,10 +35,12 @@ const statusMessage = computed(() => {
     return route.query.registered ? t('Registration received. Your account is waiting for admin approval before you can write reviews.') : t('Your account is waiting for admin approval.')
   if (route.query.status === 'rejected')
     return t('Your account was rejected by an administrator.')
+  if (route.query.status === 'disabled')
+    return t('Your account has been disabled by an administrator.')
   return ''
 })
 const toastMessage = computed(() => error.value || statusMessage.value)
-const toastKind = computed(() => error.value || route.query.status === 'rejected' ? 'error' : 'info')
+const toastKind = computed(() => error.value || route.query.status === 'rejected' || route.query.status === 'disabled' ? 'error' : 'info')
 
 async function submit() {
   error.value = ''
@@ -55,7 +57,7 @@ async function submit() {
   }
   catch (e: any) {
     const status = getApiErrorStatus(e)
-    if (status === 'pending' || status === 'rejected') {
+    if (status === 'pending' || status === 'rejected' || status === 'disabled') {
       await navigateTo(`/login?status=${status}`)
       return
     }

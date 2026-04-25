@@ -7,6 +7,7 @@ const adminUsersQuerySchema = z.object({
   q: z.string().trim().optional(),
   role: z.enum(['all', 'admin', 'user']).optional(),
   approvalStatus: z.enum(['all', 'pending', 'approved', 'rejected']).optional(),
+  activeStatus: z.enum(['all', 'active', 'inactive']).optional(),
 })
 
 export default defineEventHandler(async (event) => {
@@ -20,7 +21,7 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const { q, role = 'all', approvalStatus = 'all' } = parsed.data
+  const { q, role = 'all', approvalStatus = 'all', activeStatus = 'all' } = parsed.data
   const where: Prisma.UserWhereInput = {}
 
   if (role !== 'all')
@@ -28,6 +29,9 @@ export default defineEventHandler(async (event) => {
 
   if (approvalStatus !== 'all')
     where.approvalStatus = approvalStatus
+
+  if (activeStatus !== 'all')
+    where.isActive = activeStatus === 'active'
 
   if (q) {
     where.OR = [
@@ -48,6 +52,7 @@ export default defineEventHandler(async (event) => {
       email: true,
       role: true,
       approvalStatus: true,
+      isActive: true,
       approvedAt: true,
       createdAt: true,
       _count: {
@@ -65,6 +70,7 @@ export default defineEventHandler(async (event) => {
       email: user.email,
       role: user.role,
       approvalStatus: user.approvalStatus,
+      isActive: user.isActive,
       approvedAt: user.approvedAt?.toISOString() ?? null,
       createdAt: user.createdAt.toISOString(),
       reviewCount: user._count.reviews,

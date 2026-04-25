@@ -79,6 +79,7 @@ const feedback = ref<{
 const currentUserReview = computed(() => data.value?.currentUserReview ?? null)
 const canWriteReview = computed(() => user.value?.approvalStatus === 'approved')
 const isEditMode = computed(() => !!currentUserReview.value)
+const isHiddenReviewEdit = computed(() => currentUserReview.value?.status === 'hidden_by_admin')
 
 const sortedReviews = computed(() => {
   const reviews = data.value?.reviews ?? []
@@ -257,6 +258,10 @@ onBeforeUnmount(() => {
       </div>
 
       <form v-if="canWriteReview" mt6 flex="~ col gap4" :aria-busy="submitting || deleting" @submit.prevent="submitReview">
+        <div v-if="isHiddenReviewEdit" border="~ yellow/40" bg-yellow:10 p4 text-sm text-yellow role="status">
+          {{ $t('Your review was hidden by an administrator. Update it and submit again to make it visible.') }}
+        </div>
+
         <label flex="~ col gap2">
           <span text-sm op70>{{ isEditMode ? $t('Edit your review') : $t('Write a review') }}</span>
           <textarea

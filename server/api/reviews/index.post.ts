@@ -1,7 +1,7 @@
 import { requireApprovedUser } from '../../utils/auth'
 import { classifySentiment } from '../../utils/model-api'
 import { prisma } from '../../utils/prisma'
-import { assertEditableReviewStatus, reviewSubmissionSchema, serializeSavedReview } from '../../utils/reviews'
+import { reviewSubmissionSchema, serializeSavedReview } from '../../utils/reviews'
 import { assertRateLimit, assertValidOrigin } from '../../utils/security'
 import { fetchTmdbMediaSnapshot } from '../../utils/tmdb'
 
@@ -34,9 +34,6 @@ export default defineEventHandler(async (event) => {
       },
     },
   })
-
-  if (existingReview)
-    assertEditableReviewStatus(existingReview.status)
 
   const [media, classification] = await Promise.all([
     fetchTmdbMediaSnapshot(event, tmdbMediaType, tmdbMediaId),

@@ -29,6 +29,14 @@ const { data: reviewsData, refresh: refreshReviews } = await useFetch<{ reviews:
 })
 const busyReviewId = ref('')
 const reviewError = ref('')
+const passwordForm = reactive({
+  currentPassword: '',
+  newPassword: '',
+  confirmNewPassword: '',
+})
+const passwordLoading = ref(false)
+const passwordError = ref('')
+const passwordMessage = ref('')
 
 function statusLabel(status: UserReview['status']) {
   if (status === 'visible')
@@ -55,6 +63,43 @@ async function deleteReview(reviewId: string) {
   }
   finally {
     busyReviewId.value = ''
+  }
+}
+
+function getApiErrorMessage(e: any, fallback: string) {
+  return e?.data?.statusMessage || e?.statusMessage || e?.data?.message || fallback
+}
+
+async function updatePassword() {
+  passwordError.value = ''
+  passwordMessage.value = ''
+
+  if (passwordForm.newPassword !== passwordForm.confirmNewPassword) {
+    passwordError.value = t('Passwords do not match.')
+    return
+  }
+
+  passwordLoading.value = true
+
+  try {
+    await $fetch('/api/user/password', {
+      method: 'PATCH',
+      body: {
+        currentPassword: passwordForm.currentPassword,
+        newPassword: passwordForm.newPassword,
+        confirmNewPassword: passwordForm.confirmNewPassword,
+      },
+    })
+    passwordForm.currentPassword = ''
+    passwordForm.newPassword = ''
+    passwordForm.confirmNewPassword = ''
+    passwordMessage.value = t('Password updated.')
+  }
+  catch (e: any) {
+    passwordError.value = getApiErrorMessage(e, t('Password could not be updated. Please try again.'))
+  }
+  finally {
+    passwordLoading.value = false
   }
 }
 
@@ -110,6 +155,14 @@ useHead({
         </div>
         <div>
           <dt text-sm op60>
+            {{ $t('Account status') }}
+          </dt>
+          <dd text-xl>
+            {{ user.isActive ? $t('Active') : $t('Disabled') }}
+          </dd>
+        </div>
+        <div>
+          <dt text-sm op60>
             {{ $t('Joined') }}
           </dt>
           <dd text-xl>
@@ -117,6 +170,45 @@ useHead({
           </dd>
         </div>
       </dl>
+    </section>
+
+    <section border="~ base" bg-white:5 p5 max-w-3xl>
+      <form flex="~ col gap4" :aria-busy="passwordLoading" @submit.prevent="updatePassword">
+        <div>
+          <h2 text-2xl font-serif>
+            {{ $t('Change password') }}
+          </h2>
+          <p mt1 op60>
+            {{ $t('Update your password without signing out of this device.') }}
+          </p>
+        </div>
+
+        <div v-if="passwordMessage" border="~ primary/40" bg-primary:10 p4 text-sm role="status">
+          {{ passwordMessage }}
+        </div>
+        <div v-if="passwordError" border="~ red/40" bg-red:10 p4 text-sm text-red:1 role="alert">
+          {{ passwordError }}
+        </div>
+
+        <div grid="~ cols-1 md:cols-3 gap3">
+          <label flex="~ col gap2">
+            <span text-sm op70>{{ $t('Current password') }}</span>
+            <input v-model="passwordForm.currentPassword" class="ui-control" type="password" required autocomplete="current-password">
+          </label>
+          <label flex="~ col gap2">
+            <span text-sm op70>{{ $t('New password') }}</span>
+            <input v-model="passwordForm.newPassword" class="ui-control" type="password" minlength="8" required autocomplete="new-password">
+          </label>
+          <label flex="~ col gap2">
+            <span text-sm op70>{{ $t('Confirm new password') }}</span>
+            <input v-model="passwordForm.confirmNewPassword" class="ui-control" type="password" minlength="8" required autocomplete="new-password">
+          </label>
+        </div>
+
+        <button type="submit" class="ui-button ui-button-primary" w-max :disabled="passwordLoading">
+          {{ passwordLoading ? $t('Working...') : $t('Save password') }}
+        </button>
+      </form>
     </section>
 
     <section flex="~ col gap4">

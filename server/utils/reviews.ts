@@ -59,10 +59,10 @@ type AdminReview = Prisma.ReviewGetPayload<{
 }>
 
 export function assertEditableReviewStatus(status: ReviewStatus) {
-  if (status === 'hidden_by_admin' || status === 'deleted_by_admin') {
+  if (status === 'deleted_by_admin' || status === 'deleted_by_user') {
     throw createError({
       statusCode: 403,
-      statusMessage: 'This review has been moderated and cannot be edited.',
+      statusMessage: 'This review has been deleted and cannot be edited.',
     })
   }
 }

@@ -55,6 +55,14 @@ export default defineEventHandler(async (event) => {
     })
   }
 
+  if (!user.isActive) {
+    throw createError({
+      statusCode: 403,
+      statusMessage: 'Your account has been disabled by an administrator.',
+      data: { status: 'disabled' },
+    })
+  }
+
   if (user.approvalStatus === 'pending') {
     throw createError({
       statusCode: 403,
@@ -80,6 +88,7 @@ export default defineEventHandler(async (event) => {
       email: user.email,
       role: user.role,
       approvalStatus: user.approvalStatus,
+      isActive: user.isActive,
       createdAt: user.createdAt.toISOString(),
     },
   }

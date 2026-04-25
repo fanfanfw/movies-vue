@@ -32,6 +32,7 @@ model User {
   passwordHash     String
   role             UserRole       @default(user)
   approvalStatus   ApprovalStatus @default(pending)
+  isActive         Boolean        @default(true)
   approvedAt       DateTime?
   approvedById     String?
   approvedBy       User?          @relation("UserApprover", fields: [approvedById], references: [id], onDelete: SetNull)
@@ -43,6 +44,7 @@ model User {
   updatedAt        DateTime       @updatedAt
 
   @@index([approvalStatus])
+  @@index([isActive])
   @@index([role])
 }
 

@@ -4,6 +4,7 @@ export interface AuthUser {
   email: string
   role: 'admin' | 'user'
   approvalStatus: 'pending' | 'approved' | 'rejected'
+  isActive: boolean
   createdAt: string
 }
 
