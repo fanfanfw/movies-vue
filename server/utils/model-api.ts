@@ -17,7 +17,7 @@ export interface SentimentClassification {
   modelVersion: string | null
 }
 
-function validatePrediction(response: ModelPredictionResponse): SentimentClassification {
+export function validatePrediction(response: ModelPredictionResponse): SentimentClassification {
   if (response.label !== 'positive' && response.label !== 'negative') {
     throw createError({
       statusCode: 502,
