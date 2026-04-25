@@ -20,4 +20,5 @@ defineProps<{
       flex-1 w-50
     />
   </CarouselBase>
+  <MediaReviews :item="item" :type="type" />
 </template>
