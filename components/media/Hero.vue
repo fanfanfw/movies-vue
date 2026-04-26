@@ -4,11 +4,13 @@ import { formatTime } from '~/composables/utils'
 
 const props = withDefaults(defineProps<{
   item: Media
+  showTrailer?: boolean
 }>(), {
   item: () => ({} as Media),
+  showTrailer: true,
 })
 
-const trailer = computed(() => getTrailer(props.item))
+const trailer = computed(() => props.showTrailer ? getTrailer(props.item) : '')
 
 const mounted = useMounted()
 </script>
@@ -62,7 +64,7 @@ const mounted = useMounted()
           <p class="mt-2 op80 leading-relaxed of-hidden line-clamp-3 md:line-clamp-5 text-xs md:text-base">
             {{ props.item.overview }}
           </p>
-          <div v-if="trailer" class="py5 display-none lg:block">
+          <div v-if="trailer" py5>
             <a
               :href="trailer"
               target="_blank"
@@ -78,17 +80,6 @@ const mounted = useMounted()
           </div>
         </div>
       </Transition>
-    </div>
-    <div v-if="trailer" lg:hidden absolute left-0 top-0 right-0 h="2/3" items-center justify-center>
-      <a
-        :href="trailer"
-        target="_blank"
-        rel="noopener"
-        items-center p10 text-5xl op20 hover:op80 transition
-        :title="$t('Watch Trailer')"
-      >
-        <div i-ph-play-circle-light />
-      </a>
     </div>
   </div>
 </template>

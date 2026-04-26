@@ -4,7 +4,6 @@ import {
   presetIcons,
   presetTypography,
   presetUno,
-  presetWebFonts,
   transformerDirectives,
   transformerVariantGroup,
 } from 'unocss'
@@ -26,6 +25,11 @@ export default defineConfig({
     colors: {
       primary: '#40c1ad',
     },
+    fontFamily: {
+      sans: 'DM Sans, ui-sans-serif, system-ui, sans-serif',
+      serif: 'DM Serif Display, ui-serif, Georgia, serif',
+      mono: 'DM Mono, ui-monospace, SFMono-Regular, monospace',
+    },
   },
   presets: [
     presetUno(),
@@ -34,13 +38,6 @@ export default defineConfig({
       scale: 1.2,
     }),
     presetTypography(),
-    presetWebFonts({
-      fonts: {
-        sans: 'DM Sans',
-        serif: 'DM Serif Display',
-        mono: 'DM Mono',
-      },
-    }),
   ],
   transformers: [
     transformerDirectives(),
