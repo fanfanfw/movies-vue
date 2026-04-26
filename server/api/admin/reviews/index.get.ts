@@ -58,6 +58,20 @@ export default defineEventHandler(async (event) => {
           username: true,
         },
       },
+      history: {
+        orderBy: {
+          createdAt: 'desc',
+        },
+        select: {
+          id: true,
+          action: true,
+          content: true,
+          sentimentLabel: true,
+          sentimentConfidence: true,
+          status: true,
+          createdAt: true,
+        },
+      },
     },
   })
 

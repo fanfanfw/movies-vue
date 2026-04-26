@@ -1,6 +1,18 @@
 <script setup lang="ts">
 import { useAuth } from '~/composables/auth'
 
+type ReviewStatus = 'visible' | 'hidden_by_admin' | 'deleted_by_admin' | 'deleted_by_user'
+
+interface ReviewHistoryEntry {
+  id: string
+  action: string
+  content: string
+  sentimentLabel: 'positive' | 'negative'
+  sentimentConfidence: number
+  status: ReviewStatus
+  createdAt: string
+}
+
 interface AdminReview {
   id: string
   tmdbMediaType: 'movie' | 'tv'
@@ -11,7 +23,7 @@ interface AdminReview {
   sentimentConfidence: number
   sentimentScoresJson: Record<string, number>
   modelVersion: string | null
-  status: 'visible' | 'hidden_by_admin' | 'deleted_by_admin' | 'deleted_by_user'
+  status: ReviewStatus
   moderationMessage: string | null
   moderatedAt: string | null
   moderatedBy: {
@@ -25,6 +37,7 @@ interface AdminReview {
     username: string
     email: string
   }
+  history: ReviewHistoryEntry[]
 }
 
 const { user, refreshUser, isAdmin } = useAuth()
@@ -65,6 +78,20 @@ function statusLabel(status: AdminReview['status']) {
   if (status === 'deleted_by_admin')
     return t('Removed by admin')
   return t('Deleted by user')
+}
+
+function historyActionLabel(action: string) {
+  if (action === 'created')
+    return t('Created')
+  if (action === 'updated')
+    return t('Updated')
+  if (action === 'updated_after_admin_hide')
+    return t('Updated after admin hide')
+  if (action === 'resubmitted_after_admin_removal')
+    return t('Resubmitted after admin removal')
+  if (action === 'deleted_by_user')
+    return t('Deleted by user')
+  return action
 }
 
 function confidenceLabel(confidence: number) {
@@ -203,6 +230,25 @@ useHead({
               <p mt3 line-clamp-3 op80>
                 {{ review.content }}
               </p>
+              <details v-if="review.history.length" mt3 border="~ base" bg-white:5 p3>
+                <summary cursor-pointer text-xs op70 focus:outline-primary>
+                  {{ $t('Review history') }} ({{ review.history.length }})
+                </summary>
+                <div mt3 flex="~ col gap3">
+                  <article v-for="entry in review.history" :key="entry.id" border="t base" pt3>
+                    <div flex flex-wrap items-center gap2 text-xs>
+                      <span font-bold>{{ historyActionLabel(entry.action) }}</span>
+                      <span op55>{{ new Date(entry.createdAt).toLocaleString() }}</span>
+                      <span border="~ primary/40" px2 py1 capitalize>{{ entry.sentimentLabel }}</span>
+                      <span border="~ base" px2 py1>{{ confidenceLabel(entry.sentimentConfidence) }}</span>
+                      <span border="~ base" px2 py1>{{ statusLabel(entry.status) }}</span>
+                    </div>
+                    <p mt2 whitespace-pre-wrap leading-6 op80>
+                      {{ entry.content }}
+                    </p>
+                  </article>
+                </div>
+              </details>
             </td>
             <td p4 min-w-56>
               <div font-bold>

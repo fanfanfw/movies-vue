@@ -65,6 +65,17 @@ type AdminReview = Prisma.ReviewGetPayload<{
         username: true
       }
     }
+    history: {
+      select: {
+        id: true
+        action: true
+        content: true
+        sentimentLabel: true
+        sentimentConfidence: true
+        status: true
+        createdAt: true
+      }
+    }
   }
 }>
 
@@ -161,5 +172,14 @@ export function serializeAdminReview(review: AdminReview) {
     createdAt: review.createdAt.toISOString(),
     updatedAt: review.updatedAt.toISOString(),
     user: review.user,
+    history: review.history.map(entry => ({
+      id: entry.id,
+      action: entry.action,
+      content: entry.content,
+      sentimentLabel: entry.sentimentLabel,
+      sentimentConfidence: entry.sentimentConfidence,
+      status: entry.status,
+      createdAt: entry.createdAt.toISOString(),
+    })),
   }
 }

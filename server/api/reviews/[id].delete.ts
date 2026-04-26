@@ -40,6 +40,16 @@ export default defineEventHandler(async (event) => {
       moderationMessage: null,
       moderatedAt: null,
       moderatedById: null,
+      history: {
+        create: {
+          userId: user.id,
+          action: 'deleted_by_user',
+          content: existingReview.content,
+          sentimentLabel: existingReview.sentimentLabel,
+          sentimentConfidence: existingReview.sentimentConfidence,
+          status: 'deleted_by_user',
+        },
+      },
     },
     select: {
       id: true,

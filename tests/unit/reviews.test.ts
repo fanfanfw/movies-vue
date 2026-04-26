@@ -106,6 +106,7 @@ describe('review utilities', () => {
       moderationMessage: null,
       moderatedAt: null,
       moderatedById: null,
+      history: [],
       createdAt: new Date('2026-04-25T00:00:00.000Z'),
       updatedAt: new Date('2026-04-25T00:00:00.000Z'),
     } as any
@@ -120,5 +121,58 @@ describe('review utilities', () => {
       },
       modelVersion: 'v1',
     })
+  })
+
+  it('serializes review history for admins', () => {
+    const adminReview = serializeAdminReview({
+      id: 'review_1',
+      user: {
+        id: 'user_1',
+        username: 'critic',
+        email: 'critic@example.com',
+      },
+      moderatedBy: null,
+      tmdbMediaType: 'movie',
+      tmdbMediaId: '83533',
+      tmdbTitleSnapshot: 'The Reviewable Movie',
+      tmdbPosterPathSnapshot: null,
+      content: 'Updated review content.',
+      sentimentLabel: 'positive',
+      sentimentConfidence: 0.91,
+      sentimentScoresJson: {
+        positive: 0.91,
+        negative: 0.09,
+      },
+      modelVersion: 'v1',
+      status: 'visible',
+      moderationMessage: null,
+      moderatedAt: null,
+      moderatedById: null,
+      history: [
+        {
+          id: 'history_1',
+          action: 'updated',
+          content: 'Updated review content.',
+          sentimentLabel: 'positive',
+          sentimentConfidence: 0.91,
+          status: 'visible',
+          createdAt: new Date('2026-04-26T00:00:00.000Z'),
+        },
+      ],
+      createdAt: new Date('2026-04-25T00:00:00.000Z'),
+      updatedAt: new Date('2026-04-26T00:00:00.000Z'),
+    } as any)
+
+    expect(adminReview.history).toEqual([
+      {
+        id: 'history_1',
+        action: 'updated',
+        content: 'Updated review content.',
+        sentimentLabel: 'positive',
+        sentimentConfidence: 0.91,
+        status: 'visible',
+        createdAt: '2026-04-26T00:00:00.000Z',
+      },
+    ])
   })
 })
