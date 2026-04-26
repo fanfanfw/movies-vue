@@ -10,12 +10,6 @@ const props = withDefaults(defineProps<{
 
 const trailer = computed(() => getTrailer(props.item))
 
-const showModal = useIframeModal()
-function playTrailer() {
-  if (trailer.value)
-    showModal(trailer.value)
-}
-
 const mounted = useMounted()
 </script>
 
@@ -69,29 +63,32 @@ const mounted = useMounted()
             {{ props.item.overview }}
           </p>
           <div v-if="trailer" class="py5 display-none lg:block">
-            <button
-              type="button"
+            <a
+              :href="trailer"
+              target="_blank"
+              rel="noopener"
               flex="~ gap2" items-center p="x6 y3"
+              w-max
               bg="gray/15 hover:gray/20" transition
               :title="$t('Watch Trailer')"
-              @click="playTrailer()"
             >
               <div i-ph-play />
               {{ $t('Watch Trailer') }}
-            </button>
+            </a>
           </div>
         </div>
       </Transition>
     </div>
     <div v-if="trailer" lg:hidden absolute left-0 top-0 right-0 h="2/3" items-center justify-center>
-      <button
-        type="button"
+      <a
+        :href="trailer"
+        target="_blank"
+        rel="noopener"
         items-center p10 text-5xl op20 hover:op80 transition
         :title="$t('Watch Trailer')"
-        @click="playTrailer()"
       >
         <div i-ph-play-circle-light />
-      </button>
+      </a>
     </div>
   </div>
 </template>

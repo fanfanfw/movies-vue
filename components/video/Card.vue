@@ -5,14 +5,11 @@ const props = defineProps<{
   item: Video
 }>()
 
-const showModal = useIframeModal()
-function play() {
-  return showModal(getVideoLink(props.item)!)
-}
+const videoLink = computed(() => getVideoLink(props.item))
 </script>
 
 <template>
-  <button pb2 text-left data-testid="play-button" @click="play()">
+  <a :href="videoLink || undefined" target="_blank" rel="noopener" pb2 text-left data-testid="play-link">
     <div
       block bg-gray4:10 p1 flex
       class="aspect-16/9"
@@ -39,5 +36,5 @@ function play() {
     <div op60 text-sm data-testid="video-type">
       {{ props.item.type }}
     </div>
-  </button>
+  </a>
 </template>

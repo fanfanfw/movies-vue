@@ -17,7 +17,7 @@ describe('getTrailer', () => {
       },
     })
     const trailerLink = getTrailer(media)
-    expect(trailerLink).toBe('https://www.youtube.com/embed/trailerKey?rel=0&showinfo=0&autoplay=0')
+    expect(trailerLink).toBe('https://www.youtube.com/watch?v=trailerKey')
   })
 
   it('should return null if no trailer is found', () => {
@@ -47,7 +47,7 @@ describe('getVideoLink', () => {
   it('should return the correct YouTube embed link if key is provided', () => {
     const video: Video = { key: 'testKey', iso_639_1: 'en', iso_3166_1: 'US', name: 'Test Video', site: 'YouTube', size: 1080, type: 'Trailer', official: true, published_at: '2023-01-01T00:00:00Z', id: 'testId' }
     const videoLink = getVideoLink(video)
-    expect(videoLink).toBe('https://www.youtube.com/embed/testKey?rel=0&showinfo=0&autoplay=0')
+    expect(videoLink).toBe('https://www.youtube.com/watch?v=testKey')
   })
 
   it('should return null if no key is provided', () => {

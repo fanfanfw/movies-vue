@@ -5,13 +5,9 @@ import { describe, expect, it, vi } from 'vitest'
 import { mockVideo } from '~/tests/unit/mocks'
 import Card from './Card.vue'
 
-// Mock the useIframeModal function
-const showModalMock = vi.fn()
-
 vi.mock('~/composables/item', () => {
   return {
-    useIframeModal: () => showModalMock,
-    getVideoLink: (item: Video) => `https://www.youtube.com/embed/${item.key}?rel=0&showinfo=0&autoplay=0`,
+    getVideoLink: (item: Video) => `https://www.youtube.com/watch?v=${item.key}`,
   }
 })
 
@@ -28,17 +24,17 @@ describe('card.vue', () => {
     expect(wrapper.find('[data-testid="video-image"]').attributes('src')).toContain(mockVideo().key)
   })
 
-  it('calls play method when play button is clicked', async () => {
+  it('links directly to YouTube in a new tab', () => {
     const wrapper = mount(Card, {
       props: {
         item: mockVideo(),
       },
     })
 
-    const playMock = vi.spyOn(wrapper.vm, 'play')
-    await wrapper.find('[data-testid="play-button"]').trigger('click')
+    const link = wrapper.find('[data-testid="play-link"]')
 
-    expect(playMock).toHaveBeenCalled()
-    expect(showModalMock).toHaveBeenCalledWith(`https://www.youtube.com/embed/${mockVideo().key}?rel=0&showinfo=0&autoplay=0`)
+    expect(link.attributes('href')).toBe(`https://www.youtube.com/watch?v=${mockVideo().key}`)
+    expect(link.attributes('target')).toBe('_blank')
+    expect(link.attributes('rel')).toBe('noopener')
   })
 })
